@@ -36,7 +36,7 @@ function initApp() {
 
 async function loadStats() {
     try {
-        const res = await fetch('/api/files/stats', {
+        const res = await fetch('/files/stats', {
             headers: { 'Authorization': `Bearer ${Auth.getToken()}` }
         });
         const stats = await res.json();
@@ -57,7 +57,7 @@ async function loadContent(folderId = null) {
     grid.innerHTML = '<p><i class="fa-solid fa-spinner fa-spin"></i> Loading content...</p>';
 
     try {
-        const url = folderId ? `/api/folders/${folderId}` : '/api/folders/root';
+        const url = folderId ? `/folders/${folderId}` : '/folders/root';
         const res = await fetch(url, {
             headers: { 'Authorization': `Bearer ${Auth.getToken()}` }
         });
@@ -65,35 +65,44 @@ async function loadContent(folderId = null) {
 
         grid.innerHTML = '';
 
+        if ((!data.folders || data.folders.length === 0) && (!data.files || data.files.length === 0)) {
+            grid.innerHTML = '<p style="color:#aaa;">No folders or files found. Upload a PDF or create a folder!</p>';
+            return;
+        }
+
         // Render Folders
-        data.folders.forEach(f => {
-            const item = document.createElement('div');
-            item.className = 'grid-item';
-            item.innerHTML = `
-                <i class="fa-solid fa-folder main-icon folder-icon"></i>
-                <div class="item-title">${f.name}</div>
-                <div class="item-actions">
-                    <button onclick="deleteFolder(${f.id}, event)" class="action-btn" title="Delete"><i class="fa-solid fa-trash"></i></button>
-                </div>
-            `;
-            item.addEventListener('click', () => loadContent(f.id));
-            grid.appendChild(item);
-        });
+        if (data.folders) {
+            data.folders.forEach(f => {
+                const item = document.createElement('div');
+                item.className = 'grid-item';
+                item.innerHTML = `
+                    <i class="fa-solid fa-folder main-icon folder-icon"></i>
+                    <div class="item-title">${f.name}</div>
+                    <div class="item-actions">
+                        <button onclick="deleteFolder(${f.id}, event)" class="action-btn" title="Delete"><i class="fa-solid fa-trash"></i></button>
+                    </div>
+                `;
+                item.addEventListener('click', () => loadContent(f.id));
+                grid.appendChild(item);
+            });
+        }
 
         // Render Files
-        data.files.forEach(file => {
-            const item = document.createElement('div');
-            item.className = 'grid-item';
-            item.innerHTML = `
-                <i class="fa-solid fa-file-pdf main-icon pdf-icon"></i>
-                <div class="item-title">${file.name}</div>
-                <div class="item-actions">
-                    <button onclick="openPdf('${file.url}', '${file.name}', event)" class="action-btn" title="Open"><i class="fa-solid fa-eye"></i></button>
-                    <button onclick="deleteFile(${file.id}, event)" class="action-btn" title="Delete"><i class="fa-solid fa-trash"></i></button>
-                </div>
-            `;
-            grid.appendChild(item);
-        });
+        if (data.files) {
+            data.files.forEach(file => {
+                const item = document.createElement('div');
+                item.className = 'grid-item';
+                item.innerHTML = `
+                    <i class="fa-solid fa-file-pdf main-icon pdf-icon"></i>
+                    <div class="item-title">${file.name}</div>
+                    <div class="item-actions">
+                        <button onclick="openPdf('${file.url}', '${file.name}', event)" class="action-btn" title="Open"><i class="fa-solid fa-eye"></i></button>
+                        <button onclick="deleteFile(${file.id}, event)" class="action-btn" title="Delete"><i class="fa-solid fa-trash"></i></button>
+                    </div>
+                `;
+                grid.appendChild(item);
+            });
+        }
 
     } catch (err) {
         grid.innerHTML = '<p class="error-msg">Failed to load content.</p>';
@@ -109,7 +118,7 @@ async function handleFileUpload(e) {
     if (currentFolderId) formData.append('folder_id', currentFolderId);
 
     try {
-        const res = await fetch('/api/files/upload', {
+        const res = await fetch('/files/upload', {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${Auth.getToken()}` },
             body: formData
@@ -130,7 +139,7 @@ async function handleCreateFolder() {
     if (!name) return;
 
     try {
-        await fetch('/api/folders', {
+        await fetch('/folders', {
             method: 'POST',
             headers: {
                 'Authorization': `Bearer ${Auth.getToken()}`,
@@ -149,7 +158,6 @@ function openPdf(url, title, e) {
     if (e) e.stopPropagation();
     document.getElementById('pdf-title').textContent = title;
     
-    // Ensure Cloudinary uses inline preview format
     const embedUrl = url.replace('/upload/', '/upload/fl_inline/');
     
     document.getElementById('pdf-frame').src = embedUrl;
@@ -165,7 +173,7 @@ function closePdfModal() {
 async function deleteFile(id, e) {
     e.stopPropagation();
     if (!confirm('Are you sure you want to delete this PDF?')) return;
-    await fetch(`/api/files/${id}`, {
+    await fetch(`/files/${id}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${Auth.getToken()}` }
     });
@@ -176,7 +184,7 @@ async function deleteFile(id, e) {
 async function deleteFolder(id, e) {
     e.stopPropagation();
     if (!confirm('Delete this folder and contents?')) return;
-    await fetch(`/api/folders/${id}`, {
+    await fetch(`/folders/${id}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${Auth.getToken()}` }
     });
