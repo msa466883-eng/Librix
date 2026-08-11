@@ -1,70 +1,432 @@
+// ===== js/app.js =====
 document.addEventListener('DOMContentLoaded', () => {
-    Auth.init();
-    if (Auth.isLoggedIn()) {
+    // Auth is expected to be defined in auth.js
+    if (typeof Auth !== 'undefined') {
+        Auth.init();
+        if (Auth.isLoggedIn()) {
+            initApp();
+        } else {
+            // Show login
+            document.getElementById('login-section').classList.remove('hidden');
+            document.getElementById('app-section').classList.add('hidden');
+        }
+    } else {
+        // Fallback: skip auth for demo
+        console.warn('Auth not defined, using mock login');
+        document.getElementById('login-section').classList.add('hidden');
+        document.getElementById('app-section').classList.remove('hidden');
         initApp();
     }
+
+    // Login form handler
+    document.getElementById('login-form')?.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const key = document.getElementById('license-key-input').value.trim();
+        if (key.length > 0) {
+            // Simulate login
+            if (typeof Auth !== 'undefined' && Auth.login) {
+                Auth.login(key);
+            } else {
+                // Mock login
+                document.getElementById('login-section').classList.add('hidden');
+                document.getElementById('app-section').classList.remove('hidden');
+                initApp();
+            }
+        } else {
+            document.getElementById('login-error').classList.remove('hidden');
+            document.getElementById('error-text').textContent = 'Please enter a license key.';
+        }
+    });
 });
 
 let currentFolderId = null;
+let currentItemForSheet = null; // { type: 'file'|'folder', id, name, url? }
 
 function initApp() {
+    // Hide login, show app
     document.getElementById('login-section').classList.add('hidden');
     document.getElementById('app-section').classList.remove('hidden');
 
+    // Load initial content
     loadContent(null);
-    loadStats();
 
-    // Event Listeners
-    document.getElementById('upload-btn').addEventListener('click', () => {
+    // Event listeners
+    document.getElementById('drawer-toggle').addEventListener('click', toggleDrawer);
+    document.getElementById('drawer-close').addEventListener('click', closeDrawer);
+    document.getElementById('drawer-overlay').addEventListener('click', closeDrawer);
+    document.getElementById('logout-btn-drawer')?.addEventListener('click', () => {
+        if (typeof Auth !== 'undefined' && Auth.logout) {
+            Auth.logout();
+        } else {
+            location.reload();
+        }
+    });
+
+    // Plus button
+    document.getElementById('fab-plus').addEventListener('click', toggleFabModal);
+    document.getElementById('fab-modal-overlay').addEventListener('click', closeFabModal);
+    document.getElementById('fab-new-folder').addEventListener('click', () => {
+        closeFabModal();
+        handleCreateFolder();
+    });
+    document.getElementById('fab-upload-pdf').addEventListener('click', () => {
+        closeFabModal();
         document.getElementById('file-input').click();
     });
-
     document.getElementById('file-input').addEventListener('change', handleFileUpload);
-    document.getElementById('create-folder-btn').addEventListener('click', handleCreateFolder);
-    document.getElementById('logout-btn').addEventListener('click', Auth.logout);
+
+    // PDF close
     document.getElementById('close-pdf-btn').addEventListener('click', closePdfModal);
-    
-    // Search Filter
-    document.getElementById('search-input').addEventListener('input', (e) => {
-        const query = e.target.value.toLowerCase();
-        document.querySelectorAll('.file-row').forEach(item => {
-            const title = item.querySelector('.item-name').textContent.toLowerCase();
-            item.style.display = title.includes(query) ? 'flex' : 'none';
-        });
+    document.getElementById('pdf-modal')?.addEventListener('click', (e) => {
+        if (e.target === e.currentTarget) closePdfModal();
     });
+
+    // Bottom sheet close on overlay
+    document.getElementById('bottom-sheet-overlay').addEventListener('click', closeBottomSheet);
+
+    // Search filter (optional, but we can add a hidden input if needed)
+    // For now, we'll keep simple
 }
 
-async function loadStats() {
-    try {
-        const res = await fetch('/api/files/stats', {
-            headers: { 'Authorization': `Bearer ${Auth.getToken()}` }
-        });
-        const stats = await res.json();
-        
-        if (res.ok) {
-            const folderCount = stats.foldersCount || 0;
-            const fileCount = stats.filesCount || 0;
-            const storageMB = (stats.totalStorageMB || 0).toFixed(1);
-
-            // Update stats text inside header menu / UI
-            const subTitle = document.querySelector('.header-sub-stats');
-            if (subTitle) {
-                subTitle.textContent = `Folders: ${folderCount}  Files: ${fileCount}  Disk: ${storageMB}MB`;
-            }
-
-            // Sync with stats elements if present
-            const sf = document.getElementById('stat-folders');
-            if (sf) sf.textContent = folderCount;
-            const sfi = document.getElementById('stat-files');
-            if (sfi) sfi.textContent = fileCount;
-            const st = document.getElementById('stat-storage');
-            if (st) st.textContent = `${storageMB} MB`;
-        }
-    } catch (e) {
-        console.log("Stats error", e);
+// ----- Drawer -----
+function toggleDrawer() {
+    const drawer = document.getElementById('drawer');
+    const overlay = document.getElementById('drawer-overlay');
+    const isOpen = drawer.classList.contains('open');
+    if (isOpen) {
+        closeDrawer();
+    } else {
+        drawer.classList.add('open');
+        overlay.classList.add('active');
+        // Refresh stats
+        loadStats();
     }
 }
 
+function closeDrawer() {
+    document.getElementById('drawer').classList.remove('open');
+    document.getElementById('drawer-overlay').classList.remove('active');
+}
+
+// ----- Fab Modal -----
+function toggleFabModal() {
+    const modal = document.getElementById('fab-modal');
+    const overlay = document.getElementById('fab-modal-overlay');
+    const isOpen = modal.classList.contains('open');
+    if (isOpen) {
+        closeFabModal();
+    } else {
+        modal.classList.add('open');
+        overlay.classList.add('active');
+    }
+}
+
+function closeFabModal() {
+    document.getElementById('fab-modal').classList.remove('open');
+    document.getElementById('fab-modal-overlay').classList.remove('active');
+}
+
+// ----- Bottom Sheet -----
+function openBottomSheet(items, title = 'Actions') {
+    const sheet = document.getElementById('bottom-sheet');
+    const overlay = document.getElementById('bottom-sheet-overlay');
+    const content = document.getElementById('bottom-sheet-content');
+
+    // Build items
+    content.innerHTML = items.map((item, idx) => `
+        <button class="bottom-sheet-item ${item.danger ? 'danger' : ''}" data-index="${idx}">
+            <i class="${item.icon}"></i>
+            ${item.label}
+        </button>
+    `).join('');
+
+    // Attach click handlers
+    content.querySelectorAll('.bottom-sheet-item').forEach((btn) => {
+        const idx = parseInt(btn.dataset.index);
+        btn.addEventListener('click', () => {
+            const action = items[idx].action;
+            closeBottomSheet();
+            if (typeof action === 'function') action();
+        });
+    });
+
+    sheet.classList.add('open');
+    overlay.classList.add('active');
+}
+
+function closeBottomSheet() {
+    document.getElementById('bottom-sheet').classList.remove('open');
+    document.getElementById('bottom-sheet-overlay').classList.remove('active');
+    currentItemForSheet = null;
+}
+
+// ----- Load Content -----
+async function loadContent(folderId = null) {
+    currentFolderId = folderId;
+    const container = document.getElementById('file-list-container');
+
+    // Update breadcrumb
+    const path = folderId ? `/storage/emulated/0/Folder_${folderId}` : '/storage/emulated/0/';
+    document.getElementById('breadcrumb-path').textContent = path;
+
+    // Show loading
+    container.innerHTML = `
+        <div class="loading-state">
+            <i class="fa-solid fa-spinner fa-spin"></i>
+            <span>Loading...</span>
+        </div>
+    `;
+
+    try {
+        const url = folderId ? `/api/folders/${folderId}` : '/api/folders/root';
+        const res = await fetch(url, {
+            headers: getAuthHeaders()
+        });
+
+        if (!res.ok) throw new Error(`Server responded with ${res.status}`);
+
+        const data = await res.json();
+        renderFileList(container, data, folderId);
+        loadStats(); // update drawer stats
+
+    } catch (err) {
+        console.error('Load error:', err);
+        container.innerHTML = `
+            <div class="loading-state" style="color:#e74c3c;">
+                <i class="fa-solid fa-circle-exclamation"></i>
+                <span>Failed to load content. Please try again.</span>
+            </div>
+        `;
+    }
+}
+
+function renderFileList(container, data, folderId) {
+    container.innerHTML = '';
+
+    // Back button (..) if inside folder
+    if (folderId !== null && folderId !== undefined) {
+        const backRow = document.createElement('div');
+        backRow.className = 'file-row';
+        backRow.innerHTML = `
+            <div class="file-row-left" onclick="loadContent(null)">
+                <div class="icon-wrap"><i class="fa-solid fa-folder" style="color:#aaa;"></i></div>
+                <div class="file-row-info">
+                    <div class="file-row-name">..</div>
+                </div>
+            </div>
+        `;
+        container.appendChild(backRow);
+    }
+
+    const folders = data.folders || [];
+    const files = data.files || [];
+
+    if (folders.length === 0 && files.length === 0) {
+        container.innerHTML = `
+            <div class="loading-state" style="color:#666; padding:40px 20px;">
+                <i class="fa-regular fa-folder-open"></i>
+                <span>Empty folder</span>
+            </div>
+        `;
+        return;
+    }
+
+    // Folders
+    folders.forEach(f => {
+        const row = document.createElement('div');
+        row.className = 'file-row';
+        row.innerHTML = `
+            <div class="file-row-left" onclick="loadContent(${f.id})">
+                <div class="icon-wrap"><i class="fa-solid fa-folder" style="color:#f1c40f;"></i></div>
+                <div class="file-row-info">
+                    <div class="file-row-name">${escapeHtml(f.name)}</div>
+                    <div class="file-row-date">${formatDate(f.created_at)}</div>
+                </div>
+            </div>
+            <div class="file-row-actions">
+                <button onclick="showFolderActions(${f.id}, '${escapeHtml(f.name)}', event)">
+                    <i class="fa-solid fa-ellipsis-vertical"></i>
+                </button>
+            </div>
+        `;
+        container.appendChild(row);
+    });
+
+    // Files
+    files.forEach(f => {
+        const row = document.createElement('div');
+        row.className = 'file-row';
+        row.innerHTML = `
+            <div class="file-row-left" onclick="openPdf('${encodeURI(f.cloudinary_url)}', '${escapeHtml(f.name)}')">
+                <div class="icon-wrap"><i class="fa-solid fa-file-pdf" style="color:#e74c3c;"></i></div>
+                <div class="file-row-info">
+                    <div class="file-row-name">${escapeHtml(f.name)}</div>
+                    <div class="file-row-date">${formatDate(f.created_at)}</div>
+                </div>
+            </div>
+            <div class="file-row-actions">
+                <button onclick="showFileActions(${f.id}, '${escapeHtml(f.name)}', '${encodeURI(f.cloudinary_url)}', event)">
+                    <i class="fa-solid fa-ellipsis-vertical"></i>
+                </button>
+            </div>
+        `;
+        container.appendChild(row);
+    });
+}
+
+// ----- Actions for 3-dots -----
+function showFileActions(id, name, url, e) {
+    e.stopPropagation();
+    currentItemForSheet = { type: 'file', id, name, url };
+    const items = [
+        { icon: 'fa-regular fa-eye', label: 'Open', action: () => openPdf(url, name) },
+        { icon: 'fa-regular fa-trash-can', label: 'Delete', danger: true, action: () => deleteFile(id) },
+        { icon: 'fa-regular fa-circle-info', label: 'File Details', action: () => showFileDetails(name, url) }
+    ];
+    openBottomSheet(items, 'File Actions');
+}
+
+function showFolderActions(id, name, e) {
+    e.stopPropagation();
+    currentItemForSheet = { type: 'folder', id, name };
+    const items = [
+        { icon: 'fa-regular fa-folder-open', label: 'Open', action: () => loadContent(id) },
+        { icon: 'fa-regular fa-trash-can', label: 'Delete', danger: true, action: () => deleteFolder(id) }
+    ];
+    openBottomSheet(items, 'Folder Actions');
+}
+
+// ----- File / Folder Operations -----
+async function deleteFile(id) {
+    if (!confirm('Delete this PDF?')) return;
+    try {
+        const res = await fetch(`/api/files/${id}`, {
+            method: 'DELETE',
+            headers: getAuthHeaders()
+        });
+        if (res.ok) {
+            loadContent(currentFolderId);
+            loadStats();
+        } else {
+            alert('Delete failed.');
+        }
+    } catch (e) {
+        alert('Error deleting file.');
+    }
+}
+
+async function deleteFolder(id) {
+    if (!confirm('Delete this folder and all contents?')) return;
+    try {
+        const res = await fetch(`/api/folders/${id}`, {
+            method: 'DELETE',
+            headers: getAuthHeaders()
+        });
+        if (res.ok) {
+            loadContent(currentFolderId);
+            loadStats();
+        } else {
+            alert('Delete failed.');
+        }
+    } catch (e) {
+        alert('Error deleting folder.');
+    }
+}
+
+async function handleCreateFolder() {
+    const name = prompt('Enter folder name:');
+    if (!name) return;
+    try {
+        const res = await fetch('/api/folders', {
+            method: 'POST',
+            headers: {
+                ...getAuthHeaders(),
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ name, parent_id: currentFolderId })
+        });
+        if (res.ok) {
+            loadContent(currentFolderId);
+            loadStats();
+        } else {
+            alert('Failed to create folder.');
+        }
+    } catch (e) {
+        alert('Error creating folder.');
+    }
+}
+
+async function handleFileUpload(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    const formData = new FormData();
+    formData.append('pdf', file);
+    if (currentFolderId) formData.append('folder_id', currentFolderId);
+
+    try {
+        const res = await fetch('/api/files/upload', {
+            method: 'POST',
+            headers: getAuthHeaders(), // Note: don't set Content-Type for FormData
+            body: formData
+        });
+        if (res.ok) {
+            loadContent(currentFolderId);
+            loadStats();
+        } else {
+            alert('Upload failed.');
+        }
+    } catch (e) {
+        alert('Upload error.');
+    }
+    e.target.value = ''; // reset input
+}
+
+// ----- PDF Viewer -----
+function openPdf(url, title) {
+    if (!url || url === 'null' || url === 'undefined') {
+        alert('PDF URL is invalid.');
+        return;
+    }
+    document.getElementById('pdf-title').innerHTML = `<i class="fa-solid fa-file-pdf"></i> ${escapeHtml(title)}`;
+    const embedUrl = `https://docs.google.com/gview?url=${encodeURIComponent(url)}&embedded=true`;
+    document.getElementById('pdf-frame').src = embedUrl;
+    document.getElementById('pdf-download-link').href = url;
+    document.getElementById('pdf-modal').classList.add('active');
+}
+
+function closePdfModal() {
+    document.getElementById('pdf-modal').classList.remove('active');
+    document.getElementById('pdf-frame').src = 'about:blank';
+}
+
+function showFileDetails(name, url) {
+    alert(`File: ${name}\nURL: ${url}`);
+}
+
+// ----- Stats -----
+async function loadStats() {
+    try {
+        const res = await fetch('/api/files/stats', {
+            headers: getAuthHeaders()
+        });
+        if (!res.ok) throw new Error('Stats fetch failed');
+        const stats = await res.json();
+
+        const folders = stats.foldersCount || 0;
+        const files = stats.filesCount || 0;
+        const storage = (stats.totalStorageMB || 0).toFixed(1);
+
+        document.getElementById('drawer-folders').textContent = folders;
+        document.getElementById('drawer-pdfs').textContent = files;
+        document.getElementById('drawer-storage').textContent = `${storage} MB`;
+        // License status: assume active
+        document.getElementById('drawer-license').textContent = 'Active';
+    } catch (e) {
+        console.warn('Stats error:', e);
+    }
+}
+
+// ----- Helpers -----
 function formatDate(dateStr) {
     if (!dateStr) return '26-08-12 00:00';
     const d = new Date(dateStr);
@@ -76,231 +438,33 @@ function formatDate(dateStr) {
     return `${yy}-${mm}-${dd} ${hh}:${min}`;
 }
 
-async function loadContent(folderId = null) {
-    currentFolderId = folderId;
-    const grid = document.getElementById('content-grid');
-    
-    // Top Bar Path & 3-line Menu Structure
-    const headerTitlePath = folderId ? `/storage/emulated/0/Folder_${folderId}` : '/storage/emulated/0/';
+function escapeHtml(str) {
+    if (!str) return '';
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+}
 
-    grid.innerHTML = `
-        <div style="background:#1e1e1e; padding:10px 15px; border-bottom:1px solid #333; display:flex; align-items:center; justify-content:space-between; color:#fff;">
-            <div style="display:flex; align-items:center; gap:12px;">
-                <i class="fa-solid fa-bars" style="font-size:20px; cursor:pointer;" onclick="toggleStatsMenu()"></i>
-                <div>
-                    <div style="font-weight:bold; font-size:14px;">${headerTitlePath}</div>
-                    <div class="header-sub-stats" style="font-size:11px; color:#aaa; margin-top:2px;">Folders: 0 Files: 0 Disk: 0MB</div>
-                </div>
-            </div>
-            <div>
-                <i class="fa-solid fa-ellipsis-vertical" style="font-size:18px; cursor:pointer;" onclick="toggleFolderOptions()"></i>
-            </div>
-        </div>
-        <div id="file-list-container">
-            <p style="padding:15px; color:#ccc;"><i class="fa-solid fa-spinner fa-spin"></i> Loading content...</p>
-        </div>
-    `;
-
-    loadStats();
-
-    const listContainer = document.getElementById('file-list-container');
-
-    try {
-        const url = folderId ? `/api/folders/${folderId}` : '/api/folders/root';
-        const res = await fetch(url, {
-            headers: { 'Authorization': `Bearer ${Auth.getToken()}` }
-        });
-
-        if (!res.ok) throw new Error(`Server status ${res.status}`);
-
-        const data = await res.json();
-        listContainer.innerHTML = '';
-
-        if ((!data.folders || data.folders.length === 0) && (!data.files || data.files.length === 0)) {
-            listContainer.innerHTML = '<p style="color:#888; padding:20px; text-align:center;">No folders or files found.</p>';
-            return;
-        }
-
-        // Back Folder Row (..)
-        if (folderId !== null) {
-            const backRow = document.createElement('div');
-            backRow.className = 'file-row';
-            backRow.style.cssText = 'display:flex; align-items:center; gap:12px; padding:10px 15px; border-bottom:1px solid #282828; cursor:pointer; background:#121212;';
-            backRow.innerHTML = `
-                <i class="fa-solid fa-folder" style="color:#cfcfcf; font-size:20px;"></i>
-                <div style="color:#fff; font-weight:bold; font-size:15px;">..</div>
-            `;
-            backRow.addEventListener('click', () => loadContent(null));
-            listContainer.appendChild(backRow);
-        }
-
-        // Folders Rendering
-        if (data.folders) {
-            data.folders.forEach(f => {
-                const row = document.createElement('div');
-                row.className = 'file-row';
-                row.style.cssText = 'display:flex; align-items:center; justify-content:space-between; padding:10px 15px; border-bottom:1px solid #252525; background:#121212; cursor:pointer;';
-                row.innerHTML = `
-                    <div style="display:flex; align-items:center; gap:12px;" onclick="loadContent(${f.id})">
-                        <i class="fa-solid fa-folder" style="color:#cccccc; font-size:22px;"></i>
-                        <div>
-                            <div class="item-name" style="color:#ffffff; font-size:14px; font-weight:500;">${f.name}</div>
-                            <div style="color:#777777; font-size:11px; margin-top:2px;">${formatDate(f.created_at)}</div>
-                        </div>
-                    </div>
-                    <div>
-                        <i class="fa-solid fa-ellipsis-vertical" style="color:#888; font-size:16px; padding:8px; cursor:pointer;" onclick="showFolderMenu(${f.id}, event)"></i>
-                    </div>
-                `;
-                listContainer.appendChild(row);
-            });
-        }
-
-        // Files Rendering
-        if (data.files) {
-            data.files.forEach(file => {
-                const row = document.createElement('div');
-                row.className = 'file-row';
-                row.style.cssText = 'display:flex; align-items:center; justify-content:space-between; padding:10px 15px; border-bottom:1px solid #252525; background:#121212;';
-                row.innerHTML = `
-                    <div style="display:flex; align-items:center; gap:12px; cursor:pointer; flex:1;" onclick="openPdf('${file.cloudinary_url}', '${file.name}')">
-                        <i class="fa-solid fa-file-pdf" style="color:#e74c3c; font-size:22px;"></i>
-                        <div>
-                            <div class="item-name" style="color:#ffffff; font-size:14px; font-weight:500;">${file.name}</div>
-                            <div style="color:#777777; font-size:11px; margin-top:2px;">${formatDate(file.created_at)}</div>
-                        </div>
-                    </div>
-                    <div>
-                        <i class="fa-solid fa-ellipsis-vertical" style="color:#888; font-size:16px; padding:8px; cursor:pointer;" onclick="showFileMenu(${file.id}, '${file.cloudinary_url}', '${file.name}', event)"></i>
-                    </div>
-                `;
-                listContainer.appendChild(row);
-            });
-        }
-
-    } catch (err) {
-        console.error("Load Error:", err);
-        listContainer.innerHTML = '<p style="padding:15px; color:#e74c3c;">Failed to load content.</p>';
+function getAuthHeaders() {
+    let token = null;
+    if (typeof Auth !== 'undefined' && Auth.getToken) {
+        token = Auth.getToken();
+    } else {
+        // Fallback: read from localStorage
+        token = localStorage.getItem('authToken') || 'mock-token';
     }
+    return { 'Authorization': `Bearer ${token}` };
 }
 
-// 3-Dots Action Menu for File
-function showFileMenu(id, url, name, e) {
-    if (e) e.stopPropagation();
-    const action = prompt(`File: ${name}\n\nEnter option number:\n1. Open PDF\n2. Delete PDF`);
-    if (action === '1') {
-        openPdf(url, name);
-    } else if (action === '2') {
-        deleteFile(id);
-    }
-}
-
-// 3-Dots Action Menu for Folder
-function showFolderMenu(id, e) {
-    if (e) e.stopPropagation();
-    const action = prompt(`Folder Action:\n\nEnter option number:\n1. Open Folder\n2. Delete Folder`);
-    if (action === '1') {
-        loadContent(id);
-    } else if (action === '2') {
-        deleteFolder(id);
-    }
-}
-
-function toggleStatsMenu() {
-    loadStats();
-    alert("System Stats Status:\n• Active License\n• Fast Storage Node Attached");
-}
-
-function toggleFolderOptions() {
-    const act = prompt("Actions:\n1. New Folder\n2. Upload File");
-    if (act === '1') handleCreateFolder();
-    if (act === '2') document.getElementById('file-input').click();
-}
-
-async function handleFileUpload(e) {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    const formData = new FormData();
-    formData.append('pdf', file);
-    if (currentFolderId) formData.append('folder_id', currentFolderId);
-
-    try {
-        const res = await fetch('/api/files/upload', {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${Auth.getToken()}` },
-            body: formData
-        });
-        if (res.ok) {
-            loadContent(currentFolderId);
-            loadStats();
-        } else {
-            alert('Upload failed! Check Cloudinary keys.');
-        }
-    } catch (err) {
-        alert('Upload error!');
-    }
-}
-
-async function handleCreateFolder() {
-    const name = prompt("Enter Folder Name:");
-    if (!name) return;
-
-    try {
-        await fetch('/api/folders', {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${Auth.getToken()}`,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ name, parent_id: currentFolderId })
-        });
-        loadContent(currentFolderId);
-        loadStats();
-    } catch (e) {
-        alert('Folder creation failed');
-    }
-}
-
-// PDF Opening Fixed Function
-function openPdf(url, title, e) {
-    if (e) e.stopPropagation();
-    if (!url || url === 'null' || url === 'undefined') {
-        alert("PDF URL is invalid or file missing.");
-        return;
-    }
-    
-    document.getElementById('pdf-title').textContent = title;
-    
-    // Direct Google Docs PDF Viewer Embed Link for direct view without download blocking
-    const embedUrl = `https://docs.google.com/gview?url=${encodeURIComponent(url)}&embedded=true`;
-    
-    document.getElementById('pdf-frame').src = embedUrl;
-    document.getElementById('pdf-download-link').href = url;
-    document.getElementById('pdf-modal').classList.remove('hidden');
-}
-
-function closePdfModal() {
-    document.getElementById('pdf-modal').classList.add('hidden');
-    document.getElementById('pdf-frame').src = 'about:blank';
-}
-
-async function deleteFile(id) {
-    if (!confirm('Are you sure you want to delete this PDF?')) return;
-    await fetch(`/api/files/${id}`, {
-        method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${Auth.getToken()}` }
-    });
-    loadContent(currentFolderId);
-    loadStats();
-}
-
-async function deleteFolder(id) {
-    if (!confirm('Delete this folder and contents?')) return;
-    await fetch(`/api/folders/${id}`, {
-        method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${Auth.getToken()}` }
-    });
-    loadContent(currentFolderId);
-    loadStats();
-}
+// Expose functions to global for inline onclick
+window.loadContent = loadContent;
+window.openPdf = openPdf;
+window.showFileActions = showFileActions;
+window.showFolderActions = showFolderActions;
+window.deleteFile = deleteFile;
+window.deleteFolder = deleteFolder;
+window.closeBottomSheet = closeBottomSheet;
+window.toggleDrawer = toggleDrawer;
+window.closeDrawer = closeDrawer;
+window.closeFabModal = closeFabModal;
+window.toggleFabModal = toggleFabModal;
