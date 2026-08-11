@@ -1,5 +1,6 @@
 // ===== js/app.js =====
 document.addEventListener('DOMContentLoaded', () => {
+    // Auth Check
     if (typeof Auth !== 'undefined') {
         Auth.init();
         if (Auth.isLoggedIn()) {
@@ -14,6 +15,7 @@ document.addEventListener('DOMContentLoaded', () => {
         initApp();
     }
 
+    // Login Form Event Listener
     document.getElementById('login-form')?.addEventListener('submit', (e) => {
         e.preventDefault();
         const key = document.getElementById('license-key-input')?.value.trim();
@@ -38,12 +40,20 @@ function initApp() {
 
     loadContent(null);
 
-    // Navigation & Drawer events
+    // Navigation & Drawer Events
     document.getElementById('drawer-toggle')?.addEventListener('click', toggleDrawer);
     document.getElementById('drawer-close')?.addEventListener('click', closeDrawer);
     document.getElementById('drawer-overlay')?.addEventListener('click', closeDrawer);
-    
-    // FAB Events
+    document.getElementById('logout-btn-drawer')?.addEventListener('click', () => {
+        if (typeof Auth !== 'undefined' && Auth.logout) {
+            Auth.logout();
+        } else {
+            localStorage.removeItem('authToken');
+            location.reload();
+        }
+    });
+
+    // FAB Action Modal Events
     document.getElementById('fab-plus')?.addEventListener('click', toggleFabModal);
     document.getElementById('fab-modal-overlay')?.addEventListener('click', closeFabModal);
     document.getElementById('fab-new-folder')?.addEventListener('click', () => {
@@ -56,7 +66,7 @@ function initApp() {
     });
     document.getElementById('file-input')?.addEventListener('change', handleFileUpload);
 
-    // PDF Modal events
+    // PDF Viewer Modal & Bottom Sheet Overlays
     document.getElementById('close-pdf-btn')?.addEventListener('click', closePdfModal);
     document.getElementById('bottom-sheet-overlay')?.addEventListener('click', closeBottomSheet);
 }
@@ -66,16 +76,18 @@ function toggleDrawer() {
     document.getElementById('drawer')?.classList.toggle('open');
     document.getElementById('drawer-overlay')?.classList.toggle('active');
 }
+
 function closeDrawer() {
     document.getElementById('drawer')?.classList.remove('open');
     document.getElementById('drawer-overlay')?.classList.remove('active');
 }
 
-// ----- FAB Actions -----
+// ----- FAB Controls -----
 function toggleFabModal() {
     document.getElementById('fab-modal')?.classList.toggle('open');
     document.getElementById('fab-modal-overlay')?.classList.toggle('active');
 }
+
 function closeFabModal() {
     document.getElementById('fab-modal')?.classList.remove('open');
     document.getElementById('fab-modal-overlay')?.classList.remove('active');
@@ -122,7 +134,7 @@ async function loadContent(folderId = null, folderName = '') {
     if (folderId !== null && folderName) {
         folderBreadcrumbMap[folderId] = folderName;
     }
-    
+
     const path = folderId ? `/storage/emulated/0/${folderBreadcrumbMap[folderId] || 'Folder'}/` : '/storage/emulated/0/';
     const breadcrumbEl = document.getElementById('breadcrumb-path');
     if (breadcrumbEl) breadcrumbEl.textContent = path;
@@ -137,12 +149,13 @@ async function loadContent(folderId = null, folderName = '') {
     try {
         const url = folderId ? `/api/folders/${folderId}` : '/api/folders/root';
         const res = await fetch(url, { headers: getAuthHeaders() });
-        
-        if (!res.ok) throw new Error('API Error');
+
+        if (!res.ok) throw new Error('API Response Error');
         const data = await res.json();
         renderFileList(container, data, folderId);
+        updateDrawerStats(data);
     } catch (err) {
-        console.warn('Backend API connection pending/failed. Displaying status fallback.');
+        console.warn('API Offline or Not Found. Fallback status displayed.');
         container.innerHTML = `
             <div class="loading-state" style="color:#888;">
                 <i class="fa-regular fa-folder-open" style="font-size:2rem; margin-bottom:8px;"></i>
@@ -152,18 +165,21 @@ async function loadContent(folderId = null, folderName = '') {
     }
 }
 
+// ----- Safe Render Function for Urdu & Arabic Text -----
 function renderFileList(container, data, folderId) {
     container.innerHTML = '';
 
+    // Go Back Row
     if (folderId !== null) {
         const backRow = document.createElement('div');
         backRow.className = 'file-row';
         backRow.innerHTML = `
-            <div class="file-row-left" onclick="loadContent(null)">
+            <div class="file-row-left">
                 <div class="icon-wrap"><i class="fa-solid fa-folder" style="color:#aaa;"></i></div>
                 <div class="file-row-info"><div class="file-row-name">..</div></div>
             </div>
         `;
+        backRow.querySelector('.file-row-left').onclick = () => loadContent(null);
         container.appendChild(backRow);
     }
 
@@ -184,25 +200,39 @@ function renderFileList(container, data, folderId) {
     folders.forEach(f => {
         const row = document.createElement('div');
         row.className = 'file-row';
-        row.innerHTML = `
-            <div class="file-row-left">
-                <div class="icon-wrap"><i class="fa-solid fa-folder" style="color:#f1c40f;"></i></div>
-                <div class="file-row-info">
-                    <div class="file-row-name"></div>
-                </div>
-            </div>
-            <div class="file-row-actions">
-                <button class="action-btn"><i class="fa-solid fa-ellipsis-vertical"></i></button>
-            </div>
-        `;
-        
-        // Safe Text Assignment (Urdu / Arabic friendly)
-        row.querySelector('.file-row-name').textContent = f.name;
-        row.querySelector('.file-row-left').onclick = () => loadContent(f.id, f.name);
-        row.querySelector('.action-btn').onclick = (e) => {
+
+        const left = document.createElement('div');
+        left.className = 'file-row-left';
+        left.onclick = () => loadContent(f.id, f.name);
+
+        const icon = document.createElement('div');
+        icon.className = 'icon-wrap';
+        icon.innerHTML = '<i class="fa-solid fa-folder" style="color:#f1c40f;"></i>';
+
+        const info = document.createElement('div');
+        info.className = 'file-row-info';
+
+        const nameEl = document.createElement('div');
+        nameEl.className = 'file-row-name';
+        nameEl.textContent = f.name; // <--- Safe Text Assignment for Urdu/Arabic
+
+        info.appendChild(nameEl);
+        left.appendChild(icon);
+        left.appendChild(info);
+
+        const actions = document.createElement('div');
+        actions.className = 'file-row-actions';
+        const btn = document.createElement('button');
+        btn.className = 'action-btn';
+        btn.innerHTML = '<i class="fa-solid fa-ellipsis-vertical"></i>';
+        btn.onclick = (e) => {
             e.stopPropagation();
             showFolderActions(f.id, f.name);
         };
+        actions.appendChild(btn);
+
+        row.appendChild(left);
+        row.appendChild(actions);
         container.appendChild(row);
     });
 
@@ -210,25 +240,39 @@ function renderFileList(container, data, folderId) {
     files.forEach(f => {
         const row = document.createElement('div');
         row.className = 'file-row';
-        row.innerHTML = `
-            <div class="file-row-left">
-                <div class="icon-wrap"><i class="fa-solid fa-file-pdf" style="color:#e74c3c;"></i></div>
-                <div class="file-row-info">
-                    <div class="file-row-name"></div>
-                </div>
-            </div>
-            <div class="file-row-actions">
-                <button class="action-btn"><i class="fa-solid fa-ellipsis-vertical"></i></button>
-            </div>
-        `;
 
-        // Safe Text Assignment (Urdu / Arabic friendly)
-        row.querySelector('.file-row-name').textContent = f.name;
-        row.querySelector('.file-row-left').onclick = () => openPdf(f.cloudinary_url, f.name);
-        row.querySelector('.action-btn').onclick = (e) => {
+        const left = document.createElement('div');
+        left.className = 'file-row-left';
+        left.onclick = () => openPdf(f.cloudinary_url, f.name);
+
+        const icon = document.createElement('div');
+        icon.className = 'icon-wrap';
+        icon.innerHTML = '<i class="fa-solid fa-file-pdf" style="color:#e74c3c;"></i>';
+
+        const info = document.createElement('div');
+        info.className = 'file-row-info';
+
+        const nameEl = document.createElement('div');
+        nameEl.className = 'file-row-name';
+        nameEl.textContent = f.name; // <--- Safe Text Assignment for Urdu/Arabic
+
+        info.appendChild(nameEl);
+        left.appendChild(icon);
+        left.appendChild(info);
+
+        const actions = document.createElement('div');
+        actions.className = 'file-row-actions';
+        const btn = document.createElement('button');
+        btn.className = 'action-btn';
+        btn.innerHTML = '<i class="fa-solid fa-ellipsis-vertical"></i>';
+        btn.onclick = (e) => {
             e.stopPropagation();
             showFileActions(f.id, f.name, f.cloudinary_url);
         };
+        actions.appendChild(btn);
+
+        row.appendChild(left);
+        row.appendChild(actions);
         container.appendChild(row);
     });
 }
@@ -253,7 +297,7 @@ function showFolderActions(id, name) {
     openBottomSheet(items);
 }
 
-// ----- Operations (Rename, Delete, Create, Upload) -----
+// ----- File Operations (Rename, Delete, Create, Upload) -----
 async function handleRename(id, oldName, type) {
     const newName = prompt('Enter new name:', oldName);
     if (!newName || newName.trim() === '' || newName === oldName) return;
@@ -267,7 +311,7 @@ async function handleRename(id, oldName, type) {
         });
         if (res.ok) loadContent(currentFolderId);
     } catch (e) {
-        alert('Rename action sent.');
+        console.error('Rename failed:', e);
     }
 }
 
@@ -278,7 +322,7 @@ async function handleDelete(id, type) {
         const res = await fetch(endpoint, { method: 'DELETE', headers: getAuthHeaders() });
         if (res.ok) loadContent(currentFolderId);
     } catch (e) {
-        alert('Delete request sent.');
+        console.error('Delete failed:', e);
     }
 }
 
@@ -314,7 +358,7 @@ async function handleFileUpload(e) {
     e.target.value = '';
 }
 
-// ----- PDF Engine -----
+// ----- PDF Viewer Engine -----
 function openPdf(url, title) {
     if (!url) {
         alert('Invalid File URL');
@@ -324,7 +368,7 @@ function openPdf(url, title) {
     if (titleEl) titleEl.textContent = title;
 
     const embedUrl = `https://docs.google.com/gview?url=${encodeURIComponent(url)}&embedded=true`;
-    
+
     const iframe = document.getElementById('pdf-frame');
     if (iframe) iframe.src = embedUrl;
 
@@ -356,6 +400,17 @@ function closePdfModal() {
     if (iframe) iframe.src = 'about:blank';
 }
 
+function updateDrawerStats(data) {
+    const folderCount = data.folders ? data.folders.length : 0;
+    const fileCount = data.files ? data.files.length : 0;
+    
+    const foldersEl = document.getElementById('drawer-folders');
+    const pdfsEl = document.getElementById('drawer-pdfs');
+    
+    if (foldersEl) foldersEl.textContent = folderCount;
+    if (pdfsEl) pdfsEl.textContent = fileCount;
+}
+
 // ----- Helpers -----
 function escapeHtml(str) {
     if (!str) return '';
@@ -368,5 +423,6 @@ function getAuthHeaders() {
     return { 'Authorization': `Bearer ${localStorage.getItem('authToken') || 'mock-token'}` };
 }
 
+// Global Export
 window.loadContent = loadContent;
 window.openPdf = openPdf;
