@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="css/style.css" />
+    <link rel="stylesheet" href="css/style.css?v=3" />
 </head>
 <body>
 
@@ -75,36 +75,39 @@
                     <i class="fa-solid fa-xmark"></i>
                 </button>
             </div>
+            
+            <!-- Sleek Compact Horizontal Drawer Stats -->
             <div class="drawer-stats">
                 <div class="drawer-stat-item">
-                    <i class="fa-solid fa-folder" style="color:#f1c40f;"></i>
-                    <div>
-                        <span class="stat-number" id="drawer-folders">0</span>
+                    <div class="stat-left">
+                        <i class="fa-solid fa-folder" style="color:#f1c40f;"></i>
                         <span class="stat-label">Folders</span>
                     </div>
+                    <span class="stat-number" id="drawer-folders">0</span>
                 </div>
                 <div class="drawer-stat-item">
-                    <i class="fa-solid fa-file-pdf" style="color:#e74c3c;"></i>
-                    <div>
-                        <span class="stat-number" id="drawer-pdfs">0</span>
-                        <span class="stat-label">PDFs</span>
+                    <div class="stat-left">
+                        <i class="fa-solid fa-file-pdf" style="color:#e74c3c;"></i>
+                        <span class="stat-label">PDF Files</span>
                     </div>
+                    <span class="stat-number" id="drawer-pdfs">0</span>
                 </div>
                 <div class="drawer-stat-item">
-                    <i class="fa-solid fa-hard-drive" style="color:#3498db;"></i>
-                    <div>
-                        <span class="stat-number" id="drawer-storage">0 MB</span>
+                    <div class="stat-left">
+                        <i class="fa-solid fa-hard-drive" style="color:#3498db;"></i>
                         <span class="stat-label">Cloud Storage</span>
                     </div>
+                    <span class="stat-number" id="drawer-storage">0 MB</span>
                 </div>
                 <div class="drawer-stat-item">
-                    <i class="fa-solid fa-shield-halved" style="color:#2ecc71;"></i>
-                    <div>
-                        <span class="stat-number" id="drawer-license">Active</span>
+                    <div class="stat-left">
+                        <i class="fa-solid fa-shield-halved" style="color:#2ecc71;"></i>
                         <span class="stat-label">License Status</span>
                     </div>
+                    <span class="stat-number" id="drawer-license" style="color:#2ecc71;">Active</span>
                 </div>
             </div>
+
             <div class="drawer-footer">
                 <button id="logout-btn-drawer" class="drawer-logout-btn">
                     <i class="fa-solid fa-power-off"></i> Logout
@@ -128,10 +131,10 @@
                 <div class="pdf-modal-header">
                     <h3 id="pdf-title"><i class="fa-solid fa-file-pdf"></i> Document</h3>
                     <div class="pdf-modal-actions">
-                        <a id="pdf-download-link" href="#" target="_blank" class="pdf-btn pdf-btn-download">
+                        <a id="pdf-download-link" href="#" target="_blank" class="pdf-btn pdf-btn-download" title="Download PDF">
                             <i class="fa-solid fa-download"></i>
                         </a>
-                        <button id="close-pdf-btn" class="pdf-btn pdf-btn-close">
+                        <button id="close-pdf-btn" class="pdf-btn pdf-btn-close" title="Close">
                             <i class="fa-solid fa-xmark"></i>
                         </button>
                     </div>
@@ -157,14 +160,10 @@
     </div>
 
     <!-- Firebase -->
-    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js">
-    </script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js">
-    </script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
 
-    <script src="js/auth.js">
-    </script>
-    <script src="js/app.js">
-    </script>
+    <script src="js/auth.js?v=3"></script>
+    <script src="js/app.js?v=3"></script>
 </body>
 </html>
