@@ -27,7 +27,7 @@ function initApp() {
     // Search Filter
     document.getElementById('search-input').addEventListener('input', (e) => {
         const query = e.target.value.toLowerCase();
-        document.querySelectorAll('.explorer-item').forEach(item => {
+        document.querySelectorAll('.file-row').forEach(item => {
             const title = item.querySelector('.item-name').textContent.toLowerCase();
             item.style.display = title.includes(query) ? 'flex' : 'none';
         });
@@ -42,9 +42,23 @@ async function loadStats() {
         const stats = await res.json();
         
         if (res.ok) {
-            document.getElementById('stat-folders').textContent = stats.foldersCount || 0;
-            document.getElementById('stat-files').textContent = stats.filesCount || 0;
-            document.getElementById('stat-storage').textContent = `${(stats.totalStorageMB || 0).toFixed(1)} MB`;
+            const folderCount = stats.foldersCount || 0;
+            const fileCount = stats.filesCount || 0;
+            const storageMB = (stats.totalStorageMB || 0).toFixed(1);
+
+            // Update stats text inside header menu / UI
+            const subTitle = document.querySelector('.header-sub-stats');
+            if (subTitle) {
+                subTitle.textContent = `Folders: ${folderCount}  Files: ${fileCount}  Disk: ${storageMB}MB`;
+            }
+
+            // Sync with stats elements if present
+            const sf = document.getElementById('stat-folders');
+            if (sf) sf.textContent = folderCount;
+            const sfi = document.getElementById('stat-files');
+            if (sfi) sfi.textContent = fileCount;
+            const st = document.getElementById('stat-storage');
+            if (st) st.textContent = `${storageMB} MB`;
         }
     } catch (e) {
         console.log("Stats error", e);
@@ -65,7 +79,31 @@ function formatDate(dateStr) {
 async function loadContent(folderId = null) {
     currentFolderId = folderId;
     const grid = document.getElementById('content-grid');
-    grid.innerHTML = '<p style="padding:15px; color:#ccc;"><i class="fa-solid fa-spinner fa-spin"></i> Loading content...</p>';
+    
+    // Top Bar Path & 3-line Menu Structure
+    const headerTitlePath = folderId ? `/storage/emulated/0/Folder_${folderId}` : '/storage/emulated/0/';
+
+    grid.innerHTML = `
+        <div style="background:#1e1e1e; padding:10px 15px; border-bottom:1px solid #333; display:flex; align-items:center; justify-content:space-between; color:#fff;">
+            <div style="display:flex; align-items:center; gap:12px;">
+                <i class="fa-solid fa-bars" style="font-size:20px; cursor:pointer;" onclick="toggleStatsMenu()"></i>
+                <div>
+                    <div style="font-weight:bold; font-size:14px;">${headerTitlePath}</div>
+                    <div class="header-sub-stats" style="font-size:11px; color:#aaa; margin-top:2px;">Folders: 0 Files: 0 Disk: 0MB</div>
+                </div>
+            </div>
+            <div>
+                <i class="fa-solid fa-ellipsis-vertical" style="font-size:18px; cursor:pointer;" onclick="toggleFolderOptions()"></i>
+            </div>
+        </div>
+        <div id="file-list-container">
+            <p style="padding:15px; color:#ccc;"><i class="fa-solid fa-spinner fa-spin"></i> Loading content...</p>
+        </div>
+    `;
+
+    loadStats();
+
+    const listContainer = document.getElementById('file-list-container');
 
     try {
         const url = folderId ? `/api/folders/${folderId}` : '/api/folders/root';
@@ -76,76 +114,107 @@ async function loadContent(folderId = null) {
         if (!res.ok) throw new Error(`Server status ${res.status}`);
 
         const data = await res.json();
-        grid.innerHTML = '';
+        listContainer.innerHTML = '';
 
         if ((!data.folders || data.folders.length === 0) && (!data.files || data.files.length === 0)) {
-            grid.innerHTML = '<p style="color:#888; padding:20px; text-align:center;">Empty Folder</p>';
+            listContainer.innerHTML = '<p style="color:#888; padding:20px; text-align:center;">No folders or files found.</p>';
             return;
         }
 
-        // Parent / Go Back Row (agar inside folder ho)
+        // Back Folder Row (..)
         if (folderId !== null) {
-            const backItem = document.createElement('div');
-            backItem.className = 'explorer-item';
-            backItem.style.cssText = 'display:flex; align-items:center; gap:12px; padding:10px; border-bottom:1px solid #333; cursor:pointer;';
-            backItem.innerHTML = `
-                <i class="fa-solid fa-folder" style="color:#e0e0e0; font-size:20px;"></i>
-                <div><div class="item-name" style="font-weight:bold; color:#fff;">..</div></div>
+            const backRow = document.createElement('div');
+            backRow.className = 'file-row';
+            backRow.style.cssText = 'display:flex; align-items:center; gap:12px; padding:10px 15px; border-bottom:1px solid #282828; cursor:pointer; background:#121212;';
+            backRow.innerHTML = `
+                <i class="fa-solid fa-folder" style="color:#cfcfcf; font-size:20px;"></i>
+                <div style="color:#fff; font-weight:bold; font-size:15px;">..</div>
             `;
-            backItem.addEventListener('click', () => loadContent(null));
-            grid.appendChild(backItem);
+            backRow.addEventListener('click', () => loadContent(null));
+            listContainer.appendChild(backRow);
         }
 
-        // Render Folders (File Explorer List View Layout)
+        // Folders Rendering
         if (data.folders) {
             data.folders.forEach(f => {
-                const item = document.createElement('div');
-                item.className = 'explorer-item';
-                item.style.cssText = 'display:flex; align-items:center; justify-content:space-between; padding:10px; border-bottom:1px solid #2a2a2a; cursor:pointer;';
-                item.innerHTML = `
-                    <div style="display:flex; align-items:center; gap:12px;">
-                        <i class="fa-solid fa-folder" style="color:#cfcfcf; font-size:22px;"></i>
+                const row = document.createElement('div');
+                row.className = 'file-row';
+                row.style.cssText = 'display:flex; align-items:center; justify-content:space-between; padding:10px 15px; border-bottom:1px solid #252525; background:#121212; cursor:pointer;';
+                row.innerHTML = `
+                    <div style="display:flex; align-items:center; gap:12px;" onclick="loadContent(${f.id})">
+                        <i class="fa-solid fa-folder" style="color:#cccccc; font-size:22px;"></i>
                         <div>
-                            <div class="item-name" style="color:#e0e0e0; font-size:15px; font-weight:600;">${f.name}</div>
-                            <div style="color:#777; font-size:11px; margin-top:2px;">${formatDate(f.created_at)}</div>
+                            <div class="item-name" style="color:#ffffff; font-size:14px; font-weight:500;">${f.name}</div>
+                            <div style="color:#777777; font-size:11px; margin-top:2px;">${formatDate(f.created_at)}</div>
                         </div>
                     </div>
                     <div>
-                        <button onclick="deleteFolder(${f.id}, event)" style="background:none; border:none; color:#888; cursor:pointer;" title="Delete"><i class="fa-solid fa-trash"></i></button>
+                        <i class="fa-solid fa-ellipsis-vertical" style="color:#888; font-size:16px; padding:8px; cursor:pointer;" onclick="showFolderMenu(${f.id}, event)"></i>
                     </div>
                 `;
-                item.addEventListener('click', () => loadContent(f.id));
-                grid.appendChild(item);
+                listContainer.appendChild(row);
             });
         }
 
-        // Render Files (File Explorer List View Layout)
+        // Files Rendering
         if (data.files) {
             data.files.forEach(file => {
-                const item = document.createElement('div');
-                item.className = 'explorer-item';
-                item.style.cssText = 'display:flex; align-items:center; justify-content:space-between; padding:10px; border-bottom:1px solid #2a2a2a;';
-                item.innerHTML = `
-                    <div style="display:flex; align-items:center; gap:12px;">
+                const row = document.createElement('div');
+                row.className = 'file-row';
+                row.style.cssText = 'display:flex; align-items:center; justify-content:space-between; padding:10px 15px; border-bottom:1px solid #252525; background:#121212;';
+                row.innerHTML = `
+                    <div style="display:flex; align-items:center; gap:12px; cursor:pointer; flex:1;" onclick="openPdf('${file.cloudinary_url}', '${file.name}')">
                         <i class="fa-solid fa-file-pdf" style="color:#e74c3c; font-size:22px;"></i>
                         <div>
-                            <div class="item-name" style="color:#e0e0e0; font-size:15px; font-weight:600;">${file.name}</div>
-                            <div style="color:#777; font-size:11px; margin-top:2px;">${formatDate(file.created_at)}</div>
+                            <div class="item-name" style="color:#ffffff; font-size:14px; font-weight:500;">${file.name}</div>
+                            <div style="color:#777777; font-size:11px; margin-top:2px;">${formatDate(file.created_at)}</div>
                         </div>
                     </div>
-                    <div style="display:flex; gap:10px;">
-                        <button onclick="openPdf('${file.cloudinary_url}', '${file.name}', event)" style="background:none; border:none; color:#3498db; cursor:pointer;" title="Open"><i class="fa-solid fa-eye"></i></button>
-                        <button onclick="deleteFile(${file.id}, event)" style="background:none; border:none; color:#888; cursor:pointer;" title="Delete"><i class="fa-solid fa-trash"></i></button>
+                    <div>
+                        <i class="fa-solid fa-ellipsis-vertical" style="color:#888; font-size:16px; padding:8px; cursor:pointer;" onclick="showFileMenu(${file.id}, '${file.cloudinary_url}', '${file.name}', event)"></i>
                     </div>
                 `;
-                grid.appendChild(item);
+                listContainer.appendChild(row);
             });
         }
 
     } catch (err) {
         console.error("Load Error:", err);
-        grid.innerHTML = '<p class="error-msg" style="padding:15px; color:#e74c3c;">Failed to load content.</p>';
+        listContainer.innerHTML = '<p style="padding:15px; color:#e74c3c;">Failed to load content.</p>';
     }
+}
+
+// 3-Dots Action Menu for File
+function showFileMenu(id, url, name, e) {
+    if (e) e.stopPropagation();
+    const action = prompt(`File: ${name}\n\nEnter option number:\n1. Open PDF\n2. Delete PDF`);
+    if (action === '1') {
+        openPdf(url, name);
+    } else if (action === '2') {
+        deleteFile(id);
+    }
+}
+
+// 3-Dots Action Menu for Folder
+function showFolderMenu(id, e) {
+    if (e) e.stopPropagation();
+    const action = prompt(`Folder Action:\n\nEnter option number:\n1. Open Folder\n2. Delete Folder`);
+    if (action === '1') {
+        loadContent(id);
+    } else if (action === '2') {
+        deleteFolder(id);
+    }
+}
+
+function toggleStatsMenu() {
+    loadStats();
+    alert("System Stats Status:\n• Active License\n• Fast Storage Node Attached");
+}
+
+function toggleFolderOptions() {
+    const act = prompt("Actions:\n1. New Folder\n2. Upload File");
+    if (act === '1') handleCreateFolder();
+    if (act === '2') document.getElementById('file-input').click();
 }
 
 async function handleFileUpload(e) {
@@ -166,7 +235,7 @@ async function handleFileUpload(e) {
             loadContent(currentFolderId);
             loadStats();
         } else {
-            alert('Upload failed! Check Cloudinary keys in environment variables.');
+            alert('Upload failed! Check Cloudinary keys.');
         }
     } catch (err) {
         alert('Upload error!');
@@ -193,11 +262,18 @@ async function handleCreateFolder() {
     }
 }
 
+// PDF Opening Fixed Function
 function openPdf(url, title, e) {
     if (e) e.stopPropagation();
+    if (!url || url === 'null' || url === 'undefined') {
+        alert("PDF URL is invalid or file missing.");
+        return;
+    }
+    
     document.getElementById('pdf-title').textContent = title;
     
-    const embedUrl = url ? url.replace('/upload/', '/upload/fl_inline/') : '#';
+    // Direct Google Docs PDF Viewer Embed Link for direct view without download blocking
+    const embedUrl = `https://docs.google.com/gview?url=${encodeURIComponent(url)}&embedded=true`;
     
     document.getElementById('pdf-frame').src = embedUrl;
     document.getElementById('pdf-download-link').href = url;
@@ -209,8 +285,7 @@ function closePdfModal() {
     document.getElementById('pdf-frame').src = 'about:blank';
 }
 
-async function deleteFile(id, e) {
-    if (e) e.stopPropagation();
+async function deleteFile(id) {
     if (!confirm('Are you sure you want to delete this PDF?')) return;
     await fetch(`/api/files/${id}`, {
         method: 'DELETE',
@@ -220,8 +295,7 @@ async function deleteFile(id, e) {
     loadStats();
 }
 
-async function deleteFolder(id, e) {
-    if (e) e.stopPropagation();
+async function deleteFolder(id) {
     if (!confirm('Delete this folder and contents?')) return;
     await fetch(`/api/folders/${id}`, {
         method: 'DELETE',
