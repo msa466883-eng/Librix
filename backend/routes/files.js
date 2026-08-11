@@ -26,15 +26,15 @@ router.get('/stats', requireAuth, (req, res) => {
     });
 });
 
-// PDF Upload Endpoint (Fixed preview bug)
-router.post('/upload', requireAuth, upload.single('pdf'), (e, res) => {
+// PDF Upload Endpoint
+router.post('/upload', requireAuth, upload.single('pdf'), (req, res) => {
     if (!req.file) return res.status(400).json({ error: 'No file provided' });
 
     const folderId = req.body.folder_id || null;
 
     cloudinary.uploader.upload_stream(
         {
-            resource_type: 'image', // Changed to image/auto so Cloudinary renders PDF properly inline
+            resource_type: 'image',
             format: 'pdf',
             folder: 'kutub_cloud'
         },
