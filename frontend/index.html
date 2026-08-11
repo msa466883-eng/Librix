@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="css/style.css?v=3" />
+    <link rel="stylesheet" href="css/style.css?v=4" />
 </head>
 <body>
 
@@ -54,7 +54,6 @@
 
         <!-- ===== MAIN CONTENT ===== -->
         <main class="main-content" id="main-content">
-            <!-- The list is rendered here by JS -->
             <div id="file-list-container">
                 <div class="loading-state">
                     <i class="fa-solid fa-spinner fa-spin"></i>
@@ -63,7 +62,7 @@
             </div>
         </main>
 
-        <!-- ===== DRAWER (Hamburger Menu) ===== -->
+        <!-- ===== DRAWER ===== -->
         <div id="drawer-overlay" class="drawer-overlay hidden"></div>
         <nav id="drawer" class="drawer">
             <div class="drawer-header">
@@ -76,7 +75,6 @@
                 </button>
             </div>
             
-            <!-- Sleek Compact Horizontal Drawer Stats -->
             <div class="drawer-stats">
                 <div class="drawer-stat-item">
                     <div class="stat-left">
@@ -115,13 +113,11 @@
             </div>
         </nav>
 
-        <!-- ===== BOTTOM SHEET (3-dots action) ===== -->
+        <!-- ===== BOTTOM SHEET ===== -->
         <div id="bottom-sheet-overlay" class="bottom-sheet-overlay hidden"></div>
         <div id="bottom-sheet" class="bottom-sheet">
             <div class="bottom-sheet-handle"></div>
-            <div class="bottom-sheet-content" id="bottom-sheet-content">
-                <!-- Dynamically populated -->
-            </div>
+            <div class="bottom-sheet-content" id="bottom-sheet-content"></div>
         </div>
 
         <!-- ===== PDF VIEWER MODAL ===== -->
@@ -131,9 +127,15 @@
                 <div class="pdf-modal-header">
                     <h3 id="pdf-title"><i class="fa-solid fa-file-pdf"></i> Document</h3>
                     <div class="pdf-modal-actions">
+                        <!-- Direct Open in New Tab -->
+                        <a id="pdf-open-new" href="#" target="_blank" class="pdf-btn" title="Open PDF Direct">
+                            <i class="fa-solid fa-up-right-from-square"></i>
+                        </a>
+                        <!-- Download PDF -->
                         <a id="pdf-download-link" href="#" target="_blank" class="pdf-btn pdf-btn-download" title="Download PDF">
                             <i class="fa-solid fa-download"></i>
                         </a>
+                        <!-- Close Modal -->
                         <button id="close-pdf-btn" class="pdf-btn pdf-btn-close" title="Close">
                             <i class="fa-solid fa-xmark"></i>
                         </button>
@@ -145,7 +147,7 @@
             </div>
         </div>
 
-        <!-- ===== FAB ACTION MODAL (Plus button) ===== -->
+        <!-- ===== FAB ACTION MODAL ===== -->
         <div id="fab-modal-overlay" class="fab-modal-overlay hidden"></div>
         <div id="fab-modal" class="fab-modal">
             <button class="fab-action-btn" id="fab-new-folder">
@@ -163,7 +165,7 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
 
-    <script src="js/auth.js?v=3"></script>
-    <script src="js/app.js?v=3"></script>
+    <script src="js/auth.js?v=4"></script>
+    <script src="js/app.js?v=4"></script>
 </body>
 </html>
