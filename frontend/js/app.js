@@ -1,6 +1,5 @@
 // ===== js/app.js =====
 document.addEventListener('DOMContentLoaded', () => {
-    // Auth initialization
     if (typeof Auth !== 'undefined') {
         Auth.init();
         if (Auth.isLoggedIn()) {
@@ -16,7 +15,6 @@ document.addEventListener('DOMContentLoaded', () => {
         initApp();
     }
 
-    // Login form submit handler
     document.getElementById('login-form')?.addEventListener('submit', (e) => {
         e.preventDefault();
         const key = document.getElementById('license-key-input').value.trim();
@@ -39,17 +37,15 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 let currentFolderId = null;
-let currentItemForSheet = null; // { type: 'file'|'folder', id, name, url? }
-let folderBreadcrumbMap = {}; // Stores folder ID to Folder Name mapping for dynamic path
+let currentItemForSheet = null;
+let folderBreadcrumbMap = {};
 
 function initApp() {
     document.getElementById('login-section')?.classList.add('hidden');
     document.getElementById('app-section')?.classList.remove('hidden');
 
-    // Initial load at root directory
     loadContent(null);
 
-    // Navigation & Drawer events
     document.getElementById('drawer-toggle')?.addEventListener('click', toggleDrawer);
     document.getElementById('drawer-close')?.addEventListener('click', closeDrawer);
     document.getElementById('drawer-overlay')?.addEventListener('click', closeDrawer);
@@ -62,7 +58,6 @@ function initApp() {
         }
     });
 
-    // Plus Action (FAB) Modal events
     document.getElementById('fab-plus')?.addEventListener('click', toggleFabModal);
     document.getElementById('fab-modal-overlay')?.addEventListener('click', closeFabModal);
     document.getElementById('fab-new-folder')?.addEventListener('click', () => {
@@ -75,17 +70,14 @@ function initApp() {
     });
     document.getElementById('file-input')?.addEventListener('change', handleFileUpload);
 
-    // PDF Modal events
     document.getElementById('close-pdf-btn')?.addEventListener('click', closePdfModal);
     document.getElementById('pdf-modal')?.addEventListener('click', (e) => {
         if (e.target === e.currentTarget) closePdfModal();
     });
 
-    // Bottom Sheet overlay event
     document.getElementById('bottom-sheet-overlay')?.addEventListener('click', closeBottomSheet);
 }
 
-// ----- Drawer Functions -----
 function toggleDrawer() {
     const drawer = document.getElementById('drawer');
     const overlay = document.getElementById('drawer-overlay');
@@ -104,7 +96,6 @@ function closeDrawer() {
     document.getElementById('drawer-overlay')?.classList.remove('active');
 }
 
-// ----- FAB Action Modal -----
 function toggleFabModal() {
     const modal = document.getElementById('fab-modal');
     const overlay = document.getElementById('fab-modal-overlay');
@@ -122,7 +113,6 @@ function closeFabModal() {
     document.getElementById('fab-modal-overlay')?.classList.remove('active');
 }
 
-// ----- Bottom Sheet Actions -----
 function openBottomSheet(items, title = 'Actions') {
     const sheet = document.getElementById('bottom-sheet');
     const overlay = document.getElementById('bottom-sheet-overlay');
@@ -154,12 +144,10 @@ function closeBottomSheet() {
     currentItemForSheet = null;
 }
 
-// ----- Content Loading Engine -----
 async function loadContent(folderId = null, folderName = '') {
     currentFolderId = folderId;
     const container = document.getElementById('file-list-container');
 
-    // Breadcrumb Update Logic
     let path = '/storage/emulated/0/';
     if (folderId !== null && folderId !== undefined) {
         if (folderName) {
@@ -170,7 +158,6 @@ async function loadContent(folderId = null, folderName = '') {
     }
     document.getElementById('breadcrumb-path').textContent = path;
 
-    // Loading indicator
     container.innerHTML = `
         <div class="loading-state">
             <i class="fa-solid fa-spinner fa-spin"></i>
@@ -193,7 +180,7 @@ async function loadContent(folderId = null, folderName = '') {
         container.innerHTML = `
             <div class="loading-state" style="color:#e74c3c;">
                 <i class="fa-solid fa-circle-exclamation"></i>
-                <span>Failed to load directory. Please refresh or retry.</span>
+                <span>Failed to load content.</span>
             </div>
         `;
     }
@@ -202,7 +189,6 @@ async function loadContent(folderId = null, folderName = '') {
 function renderFileList(container, data, folderId) {
     container.innerHTML = '';
 
-    // ".." Parent Folder button
     if (folderId !== null && folderId !== undefined) {
         const backRow = document.createElement('div');
         backRow.className = 'file-row';
@@ -224,13 +210,12 @@ function renderFileList(container, data, folderId) {
         container.innerHTML += `
             <div class="loading-state" style="color:#666; padding:40px 20px;">
                 <i class="fa-regular fa-folder-open"></i>
-                <span>Folder is empty</span>
+                <span>Empty folder</span>
             </div>
         `;
         return;
     }
 
-    // Render Folders
     folders.forEach(f => {
         const row = document.createElement('div');
         row.className = 'file-row';
@@ -251,7 +236,6 @@ function renderFileList(container, data, folderId) {
         container.appendChild(row);
     });
 
-    // Render Files
     files.forEach(f => {
         const row = document.createElement('div');
         row.className = 'file-row';
@@ -273,12 +257,12 @@ function renderFileList(container, data, folderId) {
     });
 }
 
-// ----- Action Popups (3-dots) -----
 function showFileActions(id, name, url, e) {
     e.stopPropagation();
     currentItemForSheet = { type: 'file', id, name, url };
     const items = [
         { icon: 'fa-regular fa-eye', label: 'Open', action: () => openPdf(url, name) },
+        { icon: 'fa-solid fa-download', label: 'Download', action: () => downloadPdfDirect(url, name) },
         { icon: 'fa-regular fa-trash-can', label: 'Delete', danger: true, action: () => deleteFile(id) },
         { icon: 'fa-regular fa-circle-info', label: 'File Details', action: () => showFileDetails(name, url) }
     ];
@@ -295,9 +279,8 @@ function showFolderActions(id, name, e) {
     openBottomSheet(items, 'Folder Actions');
 }
 
-// ----- File and Folder Management Operations -----
 async function deleteFile(id) {
-    if (!confirm('Are you sure you want to delete this PDF?')) return;
+    if (!confirm('Delete this PDF?')) return;
     try {
         const res = await fetch(`/api/files/${id}`, {
             method: 'DELETE',
@@ -307,15 +290,15 @@ async function deleteFile(id) {
             loadContent(currentFolderId);
             loadStats();
         } else {
-            alert('Failed to delete file.');
+            alert('Delete failed.');
         }
     } catch (e) {
-        alert('Error connecting to server for deletion.');
+        alert('Error deleting file.');
     }
 }
 
 async function deleteFolder(id) {
-    if (!confirm('Are you sure you want to delete this folder and its contents?')) return;
+    if (!confirm('Delete this folder and all contents?')) return;
     try {
         const res = await fetch(`/api/folders/${id}`, {
             method: 'DELETE',
@@ -325,7 +308,7 @@ async function deleteFolder(id) {
             loadContent(currentFolderId);
             loadStats();
         } else {
-            alert('Failed to delete folder.');
+            alert('Delete failed.');
         }
     } catch (e) {
         alert('Error deleting folder.');
@@ -348,7 +331,7 @@ async function handleCreateFolder() {
             loadContent(currentFolderId);
             loadStats();
         } else {
-            alert('Could not create folder.');
+            alert('Failed to create folder.');
         }
     } catch (e) {
         alert('Error creating folder.');
@@ -373,28 +356,55 @@ async function handleFileUpload(e) {
             loadContent(currentFolderId);
             loadStats();
         } else {
-            alert('File upload failed.');
+            alert('Upload failed.');
         }
     } catch (e) {
-        alert('Network error while uploading file.');
+        alert('Upload error.');
     }
     e.target.value = '';
 }
 
-// ----- PDF Viewer Modal -----
+// ----- UPDATED PDF VIEWER & DOWNLOAD ENGINE -----
 function openPdf(url, title) {
     if (!url || url === 'null' || url === 'undefined') {
-        alert('Invalid PDF link.');
+        alert('PDF URL is invalid.');
         return;
     }
+
     const titleEl = document.getElementById('pdf-title');
     if (titleEl) {
         titleEl.innerHTML = `<i class="fa-solid fa-file-pdf"></i> ${escapeHtml(title)}`;
     }
+
+    // Google Viewer Embed URL
     const embedUrl = `https://docs.google.com/gview?url=${encodeURIComponent(url)}&embedded=true`;
     document.getElementById('pdf-frame').src = embedUrl;
-    document.getElementById('pdf-download-link').href = url;
+
+    // Direct Open Link
+    const openNewBtn = document.getElementById('pdf-open-new');
+    if (openNewBtn) {
+        openNewBtn.href = url;
+    }
+
+    // Download Link
+    const downloadBtn = document.getElementById('pdf-download-link');
+    if (downloadBtn) {
+        downloadBtn.href = url;
+        downloadBtn.setAttribute('download', title || 'document.pdf');
+    }
+
     document.getElementById('pdf-modal').classList.add('active');
+}
+
+function downloadPdfDirect(url, fileName) {
+    if (!url) return;
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = fileName || 'document.pdf';
+    a.target = '_blank';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
 }
 
 function closePdfModal() {
@@ -403,30 +413,24 @@ function closePdfModal() {
 }
 
 function showFileDetails(name, url) {
-    alert(`Name: ${name}\nCloud URL: ${url}`);
+    alert(`File: ${name}\nURL: ${url}`);
 }
 
-// ----- Drawer Stats Fetcher -----
 async function loadStats() {
     try {
         const res = await fetch('/api/files/stats', { headers: getAuthHeaders() });
-        if (!res.ok) throw new Error('Stats API call failed');
+        if (!res.ok) throw new Error('Stats failed');
         const stats = await res.json();
 
-        const foldersCount = stats.foldersCount || 0;
-        const pdfsCount = stats.filesCount || 0;
-        const storageMB = (stats.totalStorageMB || 0).toFixed(1);
-
-        document.getElementById('drawer-folders').textContent = foldersCount;
-        document.getElementById('drawer-pdfs').textContent = pdfsCount;
-        document.getElementById('drawer-storage').textContent = `${storageMB} MB`;
+        document.getElementById('drawer-folders').textContent = stats.foldersCount || 0;
+        document.getElementById('drawer-pdfs').textContent = stats.filesCount || 0;
+        document.getElementById('drawer-storage').textContent = `${(stats.totalStorageMB || 0).toFixed(1)} MB`;
         document.getElementById('drawer-license').textContent = 'Active';
     } catch (e) {
-        console.warn('Stats sync warning:', e);
+        console.warn('Stats error:', e);
     }
 }
 
-// ----- Utility Helpers -----
 function formatDate(dateStr) {
     if (!dateStr) return '26-08-12 00:00';
     const d = new Date(dateStr);
@@ -460,9 +464,9 @@ function getAuthHeaders() {
     return { 'Authorization': `Bearer ${token}` };
 }
 
-// Expose internal functions globally for inline DOM click events
 window.loadContent = loadContent;
 window.openPdf = openPdf;
+window.downloadPdfDirect = downloadPdfDirect;
 window.showFileActions = showFileActions;
 window.showFolderActions = showFolderActions;
 window.deleteFile = deleteFile;
