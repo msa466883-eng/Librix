@@ -1,143 +1,170 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kutub Cloud - Admin & Digital Library</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Kutub Cloud - File Manager</title>
     <!-- Font Awesome Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
     <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
 
-    <!-- 🔑 LICENSE KEY LOGIN SECTION -->
+    <!-- ===== LOGIN SECTION ===== -->
     <div id="login-section" class="login-container">
-        <div class="glass-card login-card">
-            <div class="brand-badge">
-                <i class="fa-solid fa-key"></i>
+        <div class="login-card">
+            <div class="login-brand">
+                <i class="fa-solid fa-book-bookmark"></i>
+                <span>Kutub Cloud</span>
             </div>
-            <h2>Kutub Cloud Access</h2>
-            <p class="subtitle">Enter your valid License Key to continue</p>
-
+            <p class="login-subtitle">Enter your license key to continue</p>
             <form id="login-form">
                 <div class="input-group">
-                    <i class="fa-solid fa-key input-icon"></i>
-                    <input type="text" id="license-key-input" placeholder="Enter License Key (e.g. KAL123...)" required>
+                    <i class="fa-solid fa-key"></i>
+                    <input type="text" id="license-key-input" placeholder="License Key (e.g. KAL123...)" required />
                 </div>
-                <button type="submit" id="login-btn" class="btn btn-primary btn-block">
-                    <i class="fa-solid fa-right-to-bracket"></i> Verify & Login
+                <button type="submit" id="login-btn" class="btn-primary">
+                    <i class="fa-solid fa-right-to-bracket"></i> Verify &amp; Login
                 </button>
             </form>
             <p id="login-error" class="error-msg hidden">
-                <i class="fa-solid fa-circle-exclamation"></i> <span id="error-text">Invalid License Key!</span>
+                <i class="fa-solid fa-circle-exclamation"></i>
+                <span id="error-text">Invalid License Key!</span>
             </p>
         </div>
     </div>
 
-    <!-- 🏛️ MAIN APP & ADMIN DASHBOARD -->
+    <!-- ===== MAIN APP ===== -->
     <div id="app-section" class="app-container hidden">
-        
-        <!-- Header -->
-        <header class="top-bar glass-card">
-            <div class="brand flex-center">
-                <i class="fa-solid fa-book-bookmark brand-icon"></i>
-                <span class="brand-title">KUTUB CLOUD</span>
-            </div>
-            
-            <div class="search-box">
-                <i class="fa-solid fa-magnifying-glass search-icon"></i>
-                <input type="text" id="search-input" placeholder="Search books, PDFs, folders...">
-            </div>
 
-            <div class="user-controls flex-center">
-                <button id="upload-btn" class="btn btn-success">
-                    <i class="fa-solid fa-cloud-arrow-up"></i> Upload PDF
-                </button>
-                <input type="file" id="file-input" accept="application/pdf" style="display: none;">
-                
-                <button id="create-folder-btn" class="btn btn-secondary">
-                    <i class="fa-solid fa-folder-plus"></i> New Folder
-                </button>
-                
-                <button id="logout-btn" class="btn btn-danger btn-icon-only" title="Logout">
-                    <i class="fa-solid fa-power-off"></i>
-                </button>
+        <!-- ===== TOP BAR ===== -->
+        <header class="top-bar">
+            <button id="drawer-toggle" class="top-bar-btn" aria-label="Open drawer">
+                <i class="fa-solid fa-bars"></i>
+            </button>
+            <div class="breadcrumb-wrap" id="breadcrumb-wrap">
+                <span id="breadcrumb-path" class="breadcrumb-path">/storage/emulated/0/</span>
             </div>
+            <button id="fab-plus" class="top-bar-btn fab-plus" aria-label="New action">
+                <i class="fa-solid fa-plus"></i>
+            </button>
         </header>
 
-        <!-- 📊 ADMIN STATS PANEL -->
-        <section class="stats-grid">
-            <div class="stat-card glass-card">
-                <div class="stat-icon icon-teal"><i class="fa-solid fa-folder"></i></div>
-                <div class="stat-info">
-                    <h3 id="stat-folders">0</h3>
-                    <p>Total Folders</p>
+        <!-- ===== MAIN CONTENT ===== -->
+        <main class="main-content" id="main-content">
+            <!-- The list is rendered here by JS -->
+            <div id="file-list-container">
+                <div class="loading-state">
+                    <i class="fa-solid fa-spinner fa-spin"></i>
+                    <span>Loading...</span>
                 </div>
-            </div>
-            <div class="stat-card glass-card">
-                <div class="stat-icon icon-blue"><i class="fa-solid fa-file-pdf"></i></div>
-                <div class="stat-info">
-                    <h3 id="stat-files">0</h3>
-                    <p>Total PDFs</p>
-                </div>
-            </div>
-            <div class="stat-card glass-card">
-                <div class="stat-icon icon-purple"><i class="fa-solid fa-hard-drive"></i></div>
-                <div class="stat-info">
-                    <h3 id="stat-storage">0 MB</h3>
-                    <p>Cloud Storage</p>
-                </div>
-            </div>
-            <div class="stat-card glass-card">
-                <div class="stat-icon icon-green"><i class="fa-solid fa-shield-halved"></i></div>
-                <div class="stat-info">
-                    <h3 id="stat-status">Active</h3>
-                    <p>License Status</p>
-                </div>
-            </div>
-        </section>
-
-        <!-- Main Content Area -->
-        <main class="main-content glass-card">
-            <!-- Breadcrumb Navigation -->
-            <nav class="breadcrumb-container" id="breadcrumb">
-                <span class="crumb active"><i class="fa-solid fa-house"></i> Root Library</span>
-            </nav>
-
-            <!-- Dynamic Folder & File Grid -->
-            <div id="content-grid" class="content-grid">
-                <!-- Javascript builds cards here -->
             </div>
         </main>
-    </div>
 
-    <!-- 📄 PDF VIEWER MODAL -->
-    <div id="pdf-modal" class="modal hidden">
-        <div class="modal-content pdf-modal-content glass-card">
-            <div class="modal-header">
-                <h3 id="pdf-title"><i class="fa-solid fa-file-pdf"></i> Document Viewer</h3>
-                <div class="modal-actions">
-                    <a id="pdf-download-link" href="#" target="_blank" class="btn btn-sm btn-success">
-                        <i class="fa-solid fa-download"></i> Download
-                    </a>
-                    <button id="close-pdf-btn" class="btn btn-sm btn-danger">
-                        <i class="fa-solid fa-xmark"></i>
-                    </button>
+        <!-- ===== DRAWER (Hamburger Menu) ===== -->
+        <div id="drawer-overlay" class="drawer-overlay hidden"></div>
+        <nav id="drawer" class="drawer">
+            <div class="drawer-header">
+                <div class="drawer-brand">
+                    <i class="fa-solid fa-book-bookmark"></i>
+                    <span>Kutub Cloud</span>
+                </div>
+                <button id="drawer-close" class="drawer-close-btn">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <div class="drawer-stats">
+                <div class="drawer-stat-item">
+                    <i class="fa-solid fa-folder" style="color:#f1c40f;"></i>
+                    <div>
+                        <span class="stat-number" id="drawer-folders">0</span>
+                        <span class="stat-label">Folders</span>
+                    </div>
+                </div>
+                <div class="drawer-stat-item">
+                    <i class="fa-solid fa-file-pdf" style="color:#e74c3c;"></i>
+                    <div>
+                        <span class="stat-number" id="drawer-pdfs">0</span>
+                        <span class="stat-label">PDFs</span>
+                    </div>
+                </div>
+                <div class="drawer-stat-item">
+                    <i class="fa-solid fa-hard-drive" style="color:#3498db;"></i>
+                    <div>
+                        <span class="stat-number" id="drawer-storage">0 MB</span>
+                        <span class="stat-label">Cloud Storage</span>
+                    </div>
+                </div>
+                <div class="drawer-stat-item">
+                    <i class="fa-solid fa-shield-halved" style="color:#2ecc71;"></i>
+                    <div>
+                        <span class="stat-number" id="drawer-license">Active</span>
+                        <span class="stat-label">License Status</span>
+                    </div>
                 </div>
             </div>
-            <div class="modal-body">
-                <iframe id="pdf-frame" src="about:blank" frameborder="0"></iframe>
+            <div class="drawer-footer">
+                <button id="logout-btn-drawer" class="drawer-logout-btn">
+                    <i class="fa-solid fa-power-off"></i> Logout
+                </button>
+            </div>
+        </nav>
+
+        <!-- ===== BOTTOM SHEET (3-dots action) ===== -->
+        <div id="bottom-sheet-overlay" class="bottom-sheet-overlay hidden"></div>
+        <div id="bottom-sheet" class="bottom-sheet">
+            <div class="bottom-sheet-handle"></div>
+            <div class="bottom-sheet-content" id="bottom-sheet-content">
+                <!-- Dynamically populated -->
             </div>
         </div>
+
+        <!-- ===== PDF VIEWER MODAL ===== -->
+        <div id="pdf-modal" class="pdf-modal hidden">
+            <div class="pdf-modal-backdrop"></div>
+            <div class="pdf-modal-card">
+                <div class="pdf-modal-header">
+                    <h3 id="pdf-title"><i class="fa-solid fa-file-pdf"></i> Document</h3>
+                    <div class="pdf-modal-actions">
+                        <a id="pdf-download-link" href="#" target="_blank" class="pdf-btn pdf-btn-download">
+                            <i class="fa-solid fa-download"></i>
+                        </a>
+                        <button id="close-pdf-btn" class="pdf-btn pdf-btn-close">
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="pdf-modal-body">
+                    <iframe id="pdf-frame" src="about:blank" frameborder="0"></iframe>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== FAB ACTION MODAL (Plus button) ===== -->
+        <div id="fab-modal-overlay" class="fab-modal-overlay hidden"></div>
+        <div id="fab-modal" class="fab-modal">
+            <button class="fab-action-btn" id="fab-new-folder">
+                <i class="fa-solid fa-folder-plus"></i> New Folder
+            </button>
+            <button class="fab-action-btn" id="fab-upload-pdf">
+                <i class="fa-solid fa-cloud-arrow-up"></i> Upload PDF
+            </button>
+            <input type="file" id="file-input" accept="application/pdf" style="display:none;" />
+        </div>
+
     </div>
 
-    <!-- Firebase Realtime Database Libraries -->
-    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js">
+    </script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js">
+    </script>
 
-    <script src="js/auth.js"></script>
-    <script src="js/app.js"></script>
+    <script src="js/auth.js">
+    </script>
+    <script src="js/app.js">
+    </script>
 </body>
 </html>
