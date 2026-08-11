@@ -223,7 +223,7 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 30px;
+    margin-bottom: 24px;
 }
 
 .drawer-brand {
@@ -248,45 +248,47 @@ body {
     padding: 4px;
 }
 
+/* Sleek Compact Horizontal Drawer Layout */
 .drawer-stats {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
     flex: 1;
 }
 
 .drawer-stat-item {
-    background: #242424;
-    border-radius: 14px;
-    padding: 16px 12px;
+    background: #222222;
+    border-radius: 12px;
+    padding: 12px 16px;
     display: flex;
     align-items: center;
-    gap: 12px;
+    justify-content: space-between;
+    border: 1px solid #2d2d2d;
+}
+
+.drawer-stat-item .stat-left {
+    display: flex;
+    align-items: center;
+    gap: 14px;
 }
 
 .drawer-stat-item i {
-    font-size: 22px;
-    width: 32px;
+    font-size: 18px;
+    width: 22px;
     text-align: center;
 }
 
-.drawer-stat-item div {
-    display: flex;
-    flex-direction: column;
-}
-
 .stat-number {
-    font-size: 18px;
+    font-size: 15px;
     font-weight: 700;
     color: #fff;
-    line-height: 1.2;
 }
 
 .stat-label {
-    font-size: 11px;
-    color: #999;
-    text-transform: uppercase;
-    letter-spacing: 0.3px;
+    font-size: 14px;
+    color: #bbb;
+    text-transform: none;
+    font-weight: 500;
 }
 
 .drawer-footer {
