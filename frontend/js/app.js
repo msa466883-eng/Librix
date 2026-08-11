@@ -1,94 +1,91 @@
 // ===== js/app.js =====
 document.addEventListener('DOMContentLoaded', () => {
-    // Auth is expected to be defined in auth.js
+    // Auth initialization
     if (typeof Auth !== 'undefined') {
         Auth.init();
         if (Auth.isLoggedIn()) {
             initApp();
         } else {
-            // Show login
-            document.getElementById('login-section').classList.remove('hidden');
-            document.getElementById('app-section').classList.add('hidden');
+            document.getElementById('login-section')?.classList.remove('hidden');
+            document.getElementById('app-section')?.classList.add('hidden');
         }
     } else {
-        // Fallback: skip auth for demo
-        console.warn('Auth not defined, using mock login');
-        document.getElementById('login-section').classList.add('hidden');
-        document.getElementById('app-section').classList.remove('hidden');
+        console.warn('Auth not defined, using fallback login state');
+        document.getElementById('login-section')?.classList.add('hidden');
+        document.getElementById('app-section')?.classList.remove('hidden');
         initApp();
     }
 
-    // Login form handler
+    // Login form submit handler
     document.getElementById('login-form')?.addEventListener('submit', (e) => {
         e.preventDefault();
         const key = document.getElementById('license-key-input').value.trim();
         if (key.length > 0) {
-            // Simulate login
             if (typeof Auth !== 'undefined' && Auth.login) {
                 Auth.login(key);
             } else {
-                // Mock login
                 document.getElementById('login-section').classList.add('hidden');
                 document.getElementById('app-section').classList.remove('hidden');
                 initApp();
             }
         } else {
-            document.getElementById('login-error').classList.remove('hidden');
-            document.getElementById('error-text').textContent = 'Please enter a license key.';
+            const errorElement = document.getElementById('login-error');
+            if (errorElement) {
+                errorElement.classList.remove('hidden');
+                document.getElementById('error-text').textContent = 'Please enter a license key.';
+            }
         }
     });
 });
 
 let currentFolderId = null;
 let currentItemForSheet = null; // { type: 'file'|'folder', id, name, url? }
+let folderBreadcrumbMap = {}; // Stores folder ID to Folder Name mapping for dynamic path
 
 function initApp() {
-    // Hide login, show app
-    document.getElementById('login-section').classList.add('hidden');
-    document.getElementById('app-section').classList.remove('hidden');
+    document.getElementById('login-section')?.classList.add('hidden');
+    document.getElementById('app-section')?.classList.remove('hidden');
 
-    // Load initial content
+    // Initial load at root directory
     loadContent(null);
 
-    // Event listeners
-    document.getElementById('drawer-toggle').addEventListener('click', toggleDrawer);
-    document.getElementById('drawer-close').addEventListener('click', closeDrawer);
-    document.getElementById('drawer-overlay').addEventListener('click', closeDrawer);
+    // Navigation & Drawer events
+    document.getElementById('drawer-toggle')?.addEventListener('click', toggleDrawer);
+    document.getElementById('drawer-close')?.addEventListener('click', closeDrawer);
+    document.getElementById('drawer-overlay')?.addEventListener('click', closeDrawer);
     document.getElementById('logout-btn-drawer')?.addEventListener('click', () => {
         if (typeof Auth !== 'undefined' && Auth.logout) {
             Auth.logout();
         } else {
+            localStorage.clear();
             location.reload();
         }
     });
 
-    // Plus button
-    document.getElementById('fab-plus').addEventListener('click', toggleFabModal);
-    document.getElementById('fab-modal-overlay').addEventListener('click', closeFabModal);
-    document.getElementById('fab-new-folder').addEventListener('click', () => {
+    // Plus Action (FAB) Modal events
+    document.getElementById('fab-plus')?.addEventListener('click', toggleFabModal);
+    document.getElementById('fab-modal-overlay')?.addEventListener('click', closeFabModal);
+    document.getElementById('fab-new-folder')?.addEventListener('click', () => {
         closeFabModal();
         handleCreateFolder();
     });
-    document.getElementById('fab-upload-pdf').addEventListener('click', () => {
+    document.getElementById('fab-upload-pdf')?.addEventListener('click', () => {
         closeFabModal();
-        document.getElementById('file-input').click();
+        document.getElementById('file-input')?.click();
     });
-    document.getElementById('file-input').addEventListener('change', handleFileUpload);
+    document.getElementById('file-input')?.addEventListener('change', handleFileUpload);
 
-    // PDF close
-    document.getElementById('close-pdf-btn').addEventListener('click', closePdfModal);
+    // PDF Modal events
+    document.getElementById('close-pdf-btn')?.addEventListener('click', closePdfModal);
     document.getElementById('pdf-modal')?.addEventListener('click', (e) => {
         if (e.target === e.currentTarget) closePdfModal();
     });
 
-    // Bottom sheet close on overlay
-    document.getElementById('bottom-sheet-overlay').addEventListener('click', closeBottomSheet);
-
-    // Search filter (optional, but we can add a hidden input if needed)
-    // For now, we'll keep simple
+    // Bottom Sheet overlay event
+    document.getElementById('bottom-sheet-overlay')?.addEventListener('click', closeBottomSheet);
 }
 
-// ----- Drawer -----
+// ----- Drawer Functions -----
 function toggleDrawer() {
     const drawer = document.getElementById('drawer');
     const overlay = document.getElementById('drawer-overlay');
@@ -98,17 +95,16 @@ function toggleDrawer() {
     } else {
         drawer.classList.add('open');
         overlay.classList.add('active');
-        // Refresh stats
         loadStats();
     }
 }
 
 function closeDrawer() {
-    document.getElementById('drawer').classList.remove('open');
-    document.getElementById('drawer-overlay').classList.remove('active');
+    document.getElementById('drawer')?.classList.remove('open');
+    document.getElementById('drawer-overlay')?.classList.remove('active');
 }
 
-// ----- Fab Modal -----
+// ----- FAB Action Modal -----
 function toggleFabModal() {
     const modal = document.getElementById('fab-modal');
     const overlay = document.getElementById('fab-modal-overlay');
@@ -122,27 +118,25 @@ function toggleFabModal() {
 }
 
 function closeFabModal() {
-    document.getElementById('fab-modal').classList.remove('open');
-    document.getElementById('fab-modal-overlay').classList.remove('active');
+    document.getElementById('fab-modal')?.classList.remove('open');
+    document.getElementById('fab-modal-overlay')?.classList.remove('active');
 }
 
-// ----- Bottom Sheet -----
+// ----- Bottom Sheet Actions -----
 function openBottomSheet(items, title = 'Actions') {
     const sheet = document.getElementById('bottom-sheet');
     const overlay = document.getElementById('bottom-sheet-overlay');
     const content = document.getElementById('bottom-sheet-content');
 
-    // Build items
     content.innerHTML = items.map((item, idx) => `
         <button class="bottom-sheet-item ${item.danger ? 'danger' : ''}" data-index="${idx}">
             <i class="${item.icon}"></i>
-            ${item.label}
+            ${escapeHtml(item.label)}
         </button>
     `).join('');
 
-    // Attach click handlers
     content.querySelectorAll('.bottom-sheet-item').forEach((btn) => {
-        const idx = parseInt(btn.dataset.index);
+        const idx = parseInt(btn.dataset.index, 10);
         btn.addEventListener('click', () => {
             const action = items[idx].action;
             closeBottomSheet();
@@ -155,21 +149,28 @@ function openBottomSheet(items, title = 'Actions') {
 }
 
 function closeBottomSheet() {
-    document.getElementById('bottom-sheet').classList.remove('open');
-    document.getElementById('bottom-sheet-overlay').classList.remove('active');
+    document.getElementById('bottom-sheet')?.classList.remove('open');
+    document.getElementById('bottom-sheet-overlay')?.classList.remove('active');
     currentItemForSheet = null;
 }
 
-// ----- Load Content -----
-async function loadContent(folderId = null) {
+// ----- Content Loading Engine -----
+async function loadContent(folderId = null, folderName = '') {
     currentFolderId = folderId;
     const container = document.getElementById('file-list-container');
 
-    // Update breadcrumb
-    const path = folderId ? `/storage/emulated/0/Folder_${folderId}` : '/storage/emulated/0/';
+    // Breadcrumb Update Logic
+    let path = '/storage/emulated/0/';
+    if (folderId !== null && folderId !== undefined) {
+        if (folderName) {
+            folderBreadcrumbMap[folderId] = folderName;
+        }
+        const currentFolderName = folderBreadcrumbMap[folderId] || `Folder_${folderId}`;
+        path = `/storage/emulated/0/${currentFolderName}/`;
+    }
     document.getElementById('breadcrumb-path').textContent = path;
 
-    // Show loading
+    // Loading indicator
     container.innerHTML = `
         <div class="loading-state">
             <i class="fa-solid fa-spinner fa-spin"></i>
@@ -179,22 +180,20 @@ async function loadContent(folderId = null) {
 
     try {
         const url = folderId ? `/api/folders/${folderId}` : '/api/folders/root';
-        const res = await fetch(url, {
-            headers: getAuthHeaders()
-        });
+        const res = await fetch(url, { headers: getAuthHeaders() });
 
-        if (!res.ok) throw new Error(`Server responded with ${res.status}`);
+        if (!res.ok) throw new Error(`Server status ${res.status}`);
 
         const data = await res.json();
         renderFileList(container, data, folderId);
-        loadStats(); // update drawer stats
+        loadStats();
 
     } catch (err) {
-        console.error('Load error:', err);
+        console.error('Load Error:', err);
         container.innerHTML = `
             <div class="loading-state" style="color:#e74c3c;">
                 <i class="fa-solid fa-circle-exclamation"></i>
-                <span>Failed to load content. Please try again.</span>
+                <span>Failed to load directory. Please refresh or retry.</span>
             </div>
         `;
     }
@@ -203,7 +202,7 @@ async function loadContent(folderId = null) {
 function renderFileList(container, data, folderId) {
     container.innerHTML = '';
 
-    // Back button (..) if inside folder
+    // ".." Parent Folder button
     if (folderId !== null && folderId !== undefined) {
         const backRow = document.createElement('div');
         backRow.className = 'file-row';
@@ -222,21 +221,21 @@ function renderFileList(container, data, folderId) {
     const files = data.files || [];
 
     if (folders.length === 0 && files.length === 0) {
-        container.innerHTML = `
+        container.innerHTML += `
             <div class="loading-state" style="color:#666; padding:40px 20px;">
                 <i class="fa-regular fa-folder-open"></i>
-                <span>Empty folder</span>
+                <span>Folder is empty</span>
             </div>
         `;
         return;
     }
 
-    // Folders
+    // Render Folders
     folders.forEach(f => {
         const row = document.createElement('div');
         row.className = 'file-row';
         row.innerHTML = `
-            <div class="file-row-left" onclick="loadContent(${f.id})">
+            <div class="file-row-left" onclick="loadContent(${f.id}, '${escapeJsString(f.name)}')">
                 <div class="icon-wrap"><i class="fa-solid fa-folder" style="color:#f1c40f;"></i></div>
                 <div class="file-row-info">
                     <div class="file-row-name">${escapeHtml(f.name)}</div>
@@ -244,7 +243,7 @@ function renderFileList(container, data, folderId) {
                 </div>
             </div>
             <div class="file-row-actions">
-                <button onclick="showFolderActions(${f.id}, '${escapeHtml(f.name)}', event)">
+                <button onclick="showFolderActions(${f.id}, '${escapeJsString(f.name)}', event)">
                     <i class="fa-solid fa-ellipsis-vertical"></i>
                 </button>
             </div>
@@ -252,12 +251,12 @@ function renderFileList(container, data, folderId) {
         container.appendChild(row);
     });
 
-    // Files
+    // Render Files
     files.forEach(f => {
         const row = document.createElement('div');
         row.className = 'file-row';
         row.innerHTML = `
-            <div class="file-row-left" onclick="openPdf('${encodeURI(f.cloudinary_url)}', '${escapeHtml(f.name)}')">
+            <div class="file-row-left" onclick="openPdf('${encodeURI(f.cloudinary_url)}', '${escapeJsString(f.name)}')">
                 <div class="icon-wrap"><i class="fa-solid fa-file-pdf" style="color:#e74c3c;"></i></div>
                 <div class="file-row-info">
                     <div class="file-row-name">${escapeHtml(f.name)}</div>
@@ -265,7 +264,7 @@ function renderFileList(container, data, folderId) {
                 </div>
             </div>
             <div class="file-row-actions">
-                <button onclick="showFileActions(${f.id}, '${escapeHtml(f.name)}', '${encodeURI(f.cloudinary_url)}', event)">
+                <button onclick="showFileActions(${f.id}, '${escapeJsString(f.name)}', '${encodeURI(f.cloudinary_url)}', event)">
                     <i class="fa-solid fa-ellipsis-vertical"></i>
                 </button>
             </div>
@@ -274,7 +273,7 @@ function renderFileList(container, data, folderId) {
     });
 }
 
-// ----- Actions for 3-dots -----
+// ----- Action Popups (3-dots) -----
 function showFileActions(id, name, url, e) {
     e.stopPropagation();
     currentItemForSheet = { type: 'file', id, name, url };
@@ -290,15 +289,15 @@ function showFolderActions(id, name, e) {
     e.stopPropagation();
     currentItemForSheet = { type: 'folder', id, name };
     const items = [
-        { icon: 'fa-regular fa-folder-open', label: 'Open', action: () => loadContent(id) },
+        { icon: 'fa-regular fa-folder-open', label: 'Open', action: () => loadContent(id, name) },
         { icon: 'fa-regular fa-trash-can', label: 'Delete', danger: true, action: () => deleteFolder(id) }
     ];
     openBottomSheet(items, 'Folder Actions');
 }
 
-// ----- File / Folder Operations -----
+// ----- File and Folder Management Operations -----
 async function deleteFile(id) {
-    if (!confirm('Delete this PDF?')) return;
+    if (!confirm('Are you sure you want to delete this PDF?')) return;
     try {
         const res = await fetch(`/api/files/${id}`, {
             method: 'DELETE',
@@ -308,15 +307,15 @@ async function deleteFile(id) {
             loadContent(currentFolderId);
             loadStats();
         } else {
-            alert('Delete failed.');
+            alert('Failed to delete file.');
         }
     } catch (e) {
-        alert('Error deleting file.');
+        alert('Error connecting to server for deletion.');
     }
 }
 
 async function deleteFolder(id) {
-    if (!confirm('Delete this folder and all contents?')) return;
+    if (!confirm('Are you sure you want to delete this folder and its contents?')) return;
     try {
         const res = await fetch(`/api/folders/${id}`, {
             method: 'DELETE',
@@ -326,7 +325,7 @@ async function deleteFolder(id) {
             loadContent(currentFolderId);
             loadStats();
         } else {
-            alert('Delete failed.');
+            alert('Failed to delete folder.');
         }
     } catch (e) {
         alert('Error deleting folder.');
@@ -335,7 +334,7 @@ async function deleteFolder(id) {
 
 async function handleCreateFolder() {
     const name = prompt('Enter folder name:');
-    if (!name) return;
+    if (!name || !name.trim()) return;
     try {
         const res = await fetch('/api/folders', {
             method: 'POST',
@@ -343,13 +342,13 @@ async function handleCreateFolder() {
                 ...getAuthHeaders(),
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ name, parent_id: currentFolderId })
+            body: JSON.stringify({ name: name.trim(), parent_id: currentFolderId })
         });
         if (res.ok) {
             loadContent(currentFolderId);
             loadStats();
         } else {
-            alert('Failed to create folder.');
+            alert('Could not create folder.');
         }
     } catch (e) {
         alert('Error creating folder.');
@@ -359,6 +358,7 @@ async function handleCreateFolder() {
 async function handleFileUpload(e) {
     const file = e.target.files[0];
     if (!file) return;
+
     const formData = new FormData();
     formData.append('pdf', file);
     if (currentFolderId) formData.append('folder_id', currentFolderId);
@@ -366,28 +366,31 @@ async function handleFileUpload(e) {
     try {
         const res = await fetch('/api/files/upload', {
             method: 'POST',
-            headers: getAuthHeaders(), // Note: don't set Content-Type for FormData
+            headers: getAuthHeaders(),
             body: formData
         });
         if (res.ok) {
             loadContent(currentFolderId);
             loadStats();
         } else {
-            alert('Upload failed.');
+            alert('File upload failed.');
         }
     } catch (e) {
-        alert('Upload error.');
+        alert('Network error while uploading file.');
     }
-    e.target.value = ''; // reset input
+    e.target.value = '';
 }
 
-// ----- PDF Viewer -----
+// ----- PDF Viewer Modal -----
 function openPdf(url, title) {
     if (!url || url === 'null' || url === 'undefined') {
-        alert('PDF URL is invalid.');
+        alert('Invalid PDF link.');
         return;
     }
-    document.getElementById('pdf-title').innerHTML = `<i class="fa-solid fa-file-pdf"></i> ${escapeHtml(title)}`;
+    const titleEl = document.getElementById('pdf-title');
+    if (titleEl) {
+        titleEl.innerHTML = `<i class="fa-solid fa-file-pdf"></i> ${escapeHtml(title)}`;
+    }
     const embedUrl = `https://docs.google.com/gview?url=${encodeURIComponent(url)}&embedded=true`;
     document.getElementById('pdf-frame').src = embedUrl;
     document.getElementById('pdf-download-link').href = url;
@@ -395,38 +398,35 @@ function openPdf(url, title) {
 }
 
 function closePdfModal() {
-    document.getElementById('pdf-modal').classList.remove('active');
+    document.getElementById('pdf-modal')?.classList.remove('active');
     document.getElementById('pdf-frame').src = 'about:blank';
 }
 
 function showFileDetails(name, url) {
-    alert(`File: ${name}\nURL: ${url}`);
+    alert(`Name: ${name}\nCloud URL: ${url}`);
 }
 
-// ----- Stats -----
+// ----- Drawer Stats Fetcher -----
 async function loadStats() {
     try {
-        const res = await fetch('/api/files/stats', {
-            headers: getAuthHeaders()
-        });
-        if (!res.ok) throw new Error('Stats fetch failed');
+        const res = await fetch('/api/files/stats', { headers: getAuthHeaders() });
+        if (!res.ok) throw new Error('Stats API call failed');
         const stats = await res.json();
 
-        const folders = stats.foldersCount || 0;
-        const files = stats.filesCount || 0;
-        const storage = (stats.totalStorageMB || 0).toFixed(1);
+        const foldersCount = stats.foldersCount || 0;
+        const pdfsCount = stats.filesCount || 0;
+        const storageMB = (stats.totalStorageMB || 0).toFixed(1);
 
-        document.getElementById('drawer-folders').textContent = folders;
-        document.getElementById('drawer-pdfs').textContent = files;
-        document.getElementById('drawer-storage').textContent = `${storage} MB`;
-        // License status: assume active
+        document.getElementById('drawer-folders').textContent = foldersCount;
+        document.getElementById('drawer-pdfs').textContent = pdfsCount;
+        document.getElementById('drawer-storage').textContent = `${storageMB} MB`;
         document.getElementById('drawer-license').textContent = 'Active';
     } catch (e) {
-        console.warn('Stats error:', e);
+        console.warn('Stats sync warning:', e);
     }
 }
 
-// ----- Helpers -----
+// ----- Utility Helpers -----
 function formatDate(dateStr) {
     if (!dateStr) return '26-08-12 00:00';
     const d = new Date(dateStr);
@@ -445,18 +445,22 @@ function escapeHtml(str) {
     return div.innerHTML;
 }
 
+function escapeJsString(str) {
+    if (!str) return '';
+    return str.replace(/'/g, "\\'").replace(/"/g, '\\"');
+}
+
 function getAuthHeaders() {
     let token = null;
     if (typeof Auth !== 'undefined' && Auth.getToken) {
         token = Auth.getToken();
     } else {
-        // Fallback: read from localStorage
         token = localStorage.getItem('authToken') || 'mock-token';
     }
     return { 'Authorization': `Bearer ${token}` };
 }
 
-// Expose functions to global for inline onclick
+// Expose internal functions globally for inline DOM click events
 window.loadContent = loadContent;
 window.openPdf = openPdf;
 window.showFileActions = showFileActions;
