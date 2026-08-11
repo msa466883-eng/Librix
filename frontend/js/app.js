@@ -36,7 +36,7 @@ function initApp() {
 
 async function loadStats() {
     try {
-        const res = await fetch('/files/stats', {
+        const res = await fetch('/api/files/stats', {
             headers: { 'Authorization': `Bearer ${Auth.getToken()}` }
         });
         const stats = await res.json();
@@ -57,16 +57,21 @@ async function loadContent(folderId = null) {
     grid.innerHTML = '<p><i class="fa-solid fa-spinner fa-spin"></i> Loading content...</p>';
 
     try {
-        const url = folderId ? `/folders/${folderId}` : '/folders/root';
+        const url = folderId ? `/api/folders/${folderId}` : '/api/folders/root';
         const res = await fetch(url, {
             headers: { 'Authorization': `Bearer ${Auth.getToken()}` }
         });
+
+        if (!res.ok) {
+            throw new Error(`Server returned ${res.status}`);
+        }
+
         const data = await res.json();
 
         grid.innerHTML = '';
 
         if ((!data.folders || data.folders.length === 0) && (!data.files || data.files.length === 0)) {
-            grid.innerHTML = '<p style="color:#aaa;">No folders or files found. Upload a PDF or create a folder!</p>';
+            grid.innerHTML = '<p style="color:#aaa; text-align:center; padding: 20px;">No folders or files found. Upload a PDF or create a folder!</p>';
             return;
         }
 
@@ -105,6 +110,7 @@ async function loadContent(folderId = null) {
         }
 
     } catch (err) {
+        console.error("Load Content Error:", err);
         grid.innerHTML = '<p class="error-msg">Failed to load content.</p>';
     }
 }
@@ -118,7 +124,7 @@ async function handleFileUpload(e) {
     if (currentFolderId) formData.append('folder_id', currentFolderId);
 
     try {
-        const res = await fetch('/files/upload', {
+        const res = await fetch('/api/files/upload', {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${Auth.getToken()}` },
             body: formData
@@ -139,7 +145,7 @@ async function handleCreateFolder() {
     if (!name) return;
 
     try {
-        await fetch('/folders', {
+        await fetch('/api/folders', {
             method: 'POST',
             headers: {
                 'Authorization': `Bearer ${Auth.getToken()}`,
@@ -173,7 +179,7 @@ function closePdfModal() {
 async function deleteFile(id, e) {
     e.stopPropagation();
     if (!confirm('Are you sure you want to delete this PDF?')) return;
-    await fetch(`/files/${id}`, {
+    await fetch(`/api/files/${id}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${Auth.getToken()}` }
     });
@@ -184,7 +190,7 @@ async function deleteFile(id, e) {
 async function deleteFolder(id, e) {
     e.stopPropagation();
     if (!confirm('Delete this folder and contents?')) return;
-    await fetch(`/folders/${id}`, {
+    await fetch(`/api/folders/${id}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${Auth.getToken()}` }
     });
