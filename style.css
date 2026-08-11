@@ -1,0 +1,490 @@
+/* ====================================================
+   KUTUB CLOUD — Google Drive inspired design
+   Clean white, blue accents, Material-style cards
+   ==================================================== */
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: 'Google Sans', 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+  background: #ffffff;
+  color: #202124;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+.hidden { display: none !important; }
+
+/* ---------- LOGIN SCREEN ---------- */
+#login-screen {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f8f9fa;
+  padding: 20px;
+}
+
+.login-box {
+  background: #fff;
+  padding: 40px 36px 32px;
+  border-radius: 16px;
+  width: 100%;
+  max-width: 380px;
+  text-align: center;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08), 0 8px 24px rgba(60,64,67,0.12);
+  border: 1px solid #dadce0;
+}
+
+.login-icon {
+  font-size: 42px;
+  margin-bottom: 8px;
+}
+
+.login-box h1 {
+  font-family: 'Google Sans', sans-serif;
+  font-weight: 500;
+  font-size: 24px;
+  color: #202124;
+  margin-bottom: 4px;
+}
+
+.subtitle {
+  color: #5f6368;
+  margin-bottom: 24px;
+  font-size: 14px;
+}
+
+.login-box input {
+  width: 100%;
+  padding: 12px 14px;
+  margin-bottom: 12px;
+  border: 1px solid #dadce0;
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: 'Roboto', sans-serif;
+  color: #202124;
+  transition: border 0.15s;
+}
+
+.login-box input:focus {
+  outline: none;
+  border: 2px solid #1a73e8;
+  padding: 11px 13px;
+}
+
+.login-box button,
+.btn-primary {
+  width: 100%;
+  padding: 11px;
+  background: #1a73e8;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  font-family: 'Google Sans', sans-serif;
+  cursor: pointer;
+  transition: background 0.15s, box-shadow 0.15s;
+}
+
+.login-box button:hover,
+.btn-primary:hover {
+  background: #1765cc;
+  box-shadow: 0 1px 2px rgba(60,64,67,0.3), 0 1px 3px 1px rgba(60,64,67,0.15);
+}
+
+.error-text {
+  color: #d93025;
+  margin-top: 10px;
+  font-size: 13px;
+  min-height: 16px;
+}
+
+/* ---------- APP SHELL ---------- */
+.topbar {
+  background: #fff;
+  color: #202124;
+  padding: 8px 20px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  border-bottom: 1px solid #e8eaed;
+}
+
+.topbar-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: none;
+}
+
+.logo-icon { font-size: 24px; }
+
+.topbar h1 {
+  font-family: 'Google Sans', sans-serif;
+  font-weight: 500;
+  font-size: 20px;
+  color: #5f6368;
+}
+
+.topbar-search {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  background: #f1f3f4;
+  border-radius: 24px;
+  padding: 0 16px;
+  max-width: 560px;
+  transition: background 0.15s, box-shadow 0.15s;
+}
+
+.topbar-search:focus-within {
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+}
+
+.search-icon { font-size: 14px; opacity: 0.6; margin-right: 10px; }
+
+#search-input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  padding: 10px 0;
+  font-size: 14px;
+  font-family: 'Roboto', sans-serif;
+  outline: none;
+  color: #202124;
+}
+
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: none;
+}
+
+.storage-badge {
+  font-size: 12px;
+  color: #5f6368;
+  background: #f1f3f4;
+  padding: 6px 12px;
+  border-radius: 16px;
+  white-space: nowrap;
+}
+
+.btn-secondary {
+  padding: 8px 16px;
+  background: #fff;
+  border: 1px solid #dadce0;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #3c4043;
+  cursor: pointer;
+  transition: background 0.15s, box-shadow 0.15s;
+  font-family: 'Google Sans', sans-serif;
+  white-space: nowrap;
+}
+
+.btn-secondary:hover {
+  background: #f8f9fa;
+  box-shadow: 0 1px 2px rgba(60,64,67,0.15);
+}
+
+.btn-primary {
+  width: auto;
+  padding: 10px 20px;
+  border-radius: 20px;
+  font-size: 13px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-plus { font-size: 16px; font-weight: 400; }
+
+.btn-danger {
+  padding: 8px 16px;
+  background: #fff;
+  color: #d93025;
+  border: 1px solid #dadce0;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s;
+  font-family: 'Google Sans', sans-serif;
+}
+
+.btn-danger:hover { background: #fce8e6; border-color: #d93025; }
+
+/* ---------- TOOLBAR ---------- */
+.toolbar {
+  display: flex;
+  gap: 10px;
+  padding: 16px 20px 12px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+/* ---------- BREADCRUMB ---------- */
+.breadcrumb {
+  padding: 4px 20px 12px;
+  font-size: 14px;
+  color: #5f6368;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-items: center;
+}
+
+.breadcrumb span {
+  cursor: pointer;
+  color: #5f6368;
+  font-weight: 500;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: background 0.15s;
+}
+
+.breadcrumb span:hover {
+  background: #f1f3f4;
+  color: #1a73e8;
+}
+
+/* ---------- GRID · Drive-style cards ---------- */
+.content-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 16px;
+  padding: 8px 20px 80px;
+}
+
+.card {
+  background: #fff;
+  border-radius: 8px;
+  padding: 20px 12px 16px;
+  text-align: center;
+  cursor: pointer;
+  position: relative;
+  border: 1px solid #e8eaed;
+  transition: box-shadow 0.15s, border-color 0.15s;
+}
+
+.card:hover {
+  box-shadow: 0 1px 2px rgba(60,64,67,0.3), 0 1px 3px 1px rgba(60,64,67,0.15);
+  border-color: #dadce0;
+}
+
+.card .icon {
+  font-size: 40px;
+  display: block;
+  margin-bottom: 8px;
+}
+
+.card .label {
+  font-size: 13px;
+  font-weight: 500;
+  word-break: break-word;
+  line-height: 1.35;
+  color: #202124;
+}
+
+.card .sub-label {
+  font-size: 11px;
+  color: #5f6368;
+  margin-top: 3px;
+}
+
+.card .edit-dot {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  font-size: 16px;
+  color: #5f6368;
+  padding: 5px 8px;
+  border-radius: 50%;
+  transition: background 0.15s;
+  line-height: 1;
+}
+
+.card .edit-dot:hover {
+  background: #f1f3f4;
+}
+
+.empty-state {
+  grid-column: 1 / -1;
+  text-align: center;
+  color: #80868b;
+  padding: 60px 20px;
+  font-size: 14px;
+}
+
+/* ---------- MODALS ---------- */
+.modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(32,33,36,0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  padding: 16px;
+}
+
+.modal-box {
+  background: #fff;
+  border-radius: 12px;
+  padding: 24px;
+  width: 100%;
+  max-width: 400px;
+  box-shadow: 0 11px 15px -7px rgba(0,0,0,0.2), 0 24px 38px 3px rgba(0,0,0,0.14);
+}
+
+.modal-box h3 {
+  font-family: 'Google Sans', sans-serif;
+  font-weight: 500;
+  font-size: 18px;
+  color: #202124;
+  margin-bottom: 16px;
+}
+
+.modal-box input,
+.modal-box select {
+  width: 100%;
+  padding: 11px 12px;
+  margin-bottom: 10px;
+  border: 1px solid #dadce0;
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: 'Roboto', sans-serif;
+  color: #202124;
+  transition: border 0.15s;
+}
+
+.modal-box input:focus,
+.modal-box select:focus {
+  outline: none;
+  border: 2px solid #1a73e8;
+  padding: 10px 11px;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+
+.hint-text {
+  font-size: 12px;
+  color: #5f6368;
+  margin-bottom: 6px;
+  display: block;
+}
+
+/* file upload drop zone */
+.file-drop {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: 2px dashed #dadce0;
+  border-radius: 10px;
+  padding: 24px 12px;
+  margin-bottom: 10px;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+  position: relative;
+}
+
+.file-drop:hover {
+  border-color: #1a73e8;
+  background: #f8faff;
+}
+
+.file-drop-icon { font-size: 28px; }
+.file-drop-text { font-size: 13px; color: #5f6368; }
+
+.file-drop input[type="file"] {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+  width: 100%;
+  height: 100%;
+}
+
+/* ---------- PDF VIEWER ---------- */
+.viewer-box {
+  max-width: 100%;
+  width: 100%;
+  height: 92vh;
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+  border-radius: 12px;
+}
+
+.viewer-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.viewer-header span {
+  font-weight: 500;
+  font-size: 15px;
+  color: #202124;
+  font-family: 'Google Sans', sans-serif;
+}
+
+.viewer-frame {
+  flex: 1;
+  border: 1px solid #e8eaed;
+  border-radius: 8px;
+  background: #f1f3f4;
+}
+
+/* ---------- RESPONSIVE · mobile-first ---------- */
+@media (max-width: 640px) {
+  .topbar {
+    padding: 8px 12px;
+    gap: 10px;
+  }
+  .topbar h1 { display: none; }
+  .topbar-search { max-width: none; }
+  .toolbar { padding: 12px; }
+  .content-grid {
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 10px;
+    padding: 8px 12px 60px;
+  }
+  .card { padding: 14px 8px 12px; }
+  .card .icon { font-size: 32px; }
+  .card .label { font-size: 12px; }
+  .modal-box { padding: 18px; max-width: 95%; }
+  .viewer-box { padding: 10px; height: 95vh; }
+  .breadcrumb { padding: 6px 12px; font-size: 12px; }
+  .storage-badge { display: none; }
+}
+
+@media (min-width: 700px) {
+  .content-grid {
+    grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  }
+}
+
+/* scrollbar */
+::-webkit-scrollbar { width: 8px; background: #fff; }
+::-webkit-scrollbar-thumb { background: #dadce0; border-radius: 8px; }
+::-webkit-scrollbar-thumb:hover { background: #bdc1c6; }

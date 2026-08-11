@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kutub Cloud</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<!-- ===== LOGIN SCREEN ===== -->
+<div id="login-screen" class="screen">
+  <div class="login-box">
+    <div class="login-icon">📚</div>
+    <h1>Kutub Cloud</h1>
+    <p class="subtitle">Sign in to your library</p>
+    <form id="login-form">
+      <input type="text" id="login-username" placeholder="Username" autocomplete="username" required>
+      <input type="password" id="login-password" placeholder="Password" autocomplete="current-password" required>
+      <button type="submit">Sign In</button>
+      <p id="login-error" class="error-text"></p>
+    </form>
+  </div>
+</div>
+
+<!-- ===== MAIN APP ===== -->
+<div id="app-screen" class="screen hidden">
+  <header class="topbar">
+    <div class="topbar-left">
+      <span class="logo-icon">📚</span>
+      <h1>Kutub Cloud</h1>
+    </div>
+    <div class="topbar-search">
+      <span class="search-icon">🔎</span>
+      <input type="search" id="search-input" placeholder="Search books or author...">
+    </div>
+    <div class="topbar-actions">
+      <span id="storage-usage" class="storage-badge"></span>
+      <button id="logout-btn" class="btn-secondary">Sign Out</button>
+    </div>
+  </header>
+
+  <div class="toolbar">
+    <button id="upload-btn" class="btn-primary">
+      <span class="btn-plus">＋</span> Upload PDF
+    </button>
+    <button id="new-folder-btn" class="btn-secondary">📁 New Folder</button>
+  </div>
+
+  <nav id="breadcrumb" class="breadcrumb"></nav>
+
+  <main id="content-grid" class="content-grid"></main>
+</div>
+
+<!-- ===== New Folder Modal ===== -->
+<div id="folder-modal" class="modal hidden">
+  <div class="modal-box">
+    <h3>New Folder</h3>
+    <input type="text" id="folder-name-input" placeholder="Folder name (e.g. Imam Nawawi)">
+    <input type="text" id="folder-musannif-input" placeholder="Author / Musannif (optional)">
+    <div class="modal-actions">
+      <button id="folder-cancel-btn" class="btn-secondary">Cancel</button>
+      <button id="folder-save-btn" class="btn-primary">Create</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Upload Modal ===== -->
+<div id="upload-modal" class="modal hidden">
+  <div class="modal-box">
+    <h3>Upload PDF</h3>
+    <label class="file-drop" for="upload-file-input">
+      <span class="file-drop-icon">📤</span>
+      <span class="file-drop-text">Tap to choose a PDF</span>
+      <input type="file" id="upload-file-input" accept="application/pdf">
+    </label>
+    <input type="text" id="upload-name-input" placeholder="Book name (optional)">
+    <p id="upload-progress" class="hint-text"></p>
+    <div class="modal-actions">
+      <button id="upload-cancel-btn" class="btn-secondary">Cancel</button>
+      <button id="upload-save-btn" class="btn-primary">Upload</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Rename/Move Modal ===== -->
+<div id="edit-modal" class="modal hidden">
+  <div class="modal-box">
+    <h3 id="edit-modal-title">Edit</h3>
+    <input type="text" id="edit-name-input" placeholder="New name">
+    <label class="hint-text" id="edit-move-label">Move to folder:</label>
+    <select id="edit-move-select"></select>
+    <div class="modal-actions">
+      <button id="edit-cancel-btn" class="btn-secondary">Cancel</button>
+      <button id="edit-delete-btn" class="btn-danger">Delete</button>
+      <button id="edit-save-btn" class="btn-primary">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== PDF Viewer Modal ===== -->
+<div id="viewer-modal" class="modal hidden">
+  <div class="modal-box viewer-box">
+    <div class="viewer-header">
+      <span id="viewer-title"></span>
+      <div>
+        <a id="viewer-download" class="btn-secondary" download>⬇ Download</a>
+        <button id="viewer-close-btn" class="btn-secondary">✕ Close</button>
+      </div>
+    </div>
+    <iframe id="viewer-frame" class="viewer-frame"></iframe>
+  </div>
+</div>
+
+<script src="js/auth.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
