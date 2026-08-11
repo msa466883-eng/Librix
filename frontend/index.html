@@ -1,139 +1,139 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Kutub Cloud</title>
-    <!-- Google Font -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet" />
-    <!-- Font Awesome 6 (FREE) -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
-    <link rel="stylesheet" href="css/style.css" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kutub Cloud - Admin & Digital Library</title>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 
-    <!-- ==================== LOGIN SCREEN ==================== -->
-    <div id="loginScreen" class="login-screen">
-        <div class="login-card">
-            <div class="login-icon">
-                <i class="fas fa-cloud"></i>
+    <!-- 🔒 LOGIN SECTION -->
+    <div id="login-section" class="login-container">
+        <div class="glass-card login-card">
+            <div class="brand-badge">
+                <i class="fa-solid fa-vault"></i>
             </div>
-            <h1>Kutub Cloud</h1>
-            <p class="login-sub">Islamic Digital Library</p>
-            <form id="loginForm">
+            <h2>Kutub Cloud Admin</h2>
+            <p class="subtitle">Enter your admin credentials to manage library</p>
+
+            <form id="login-form">
                 <div class="input-group">
-                    <i class="fas fa-user"></i>
-                    <input type="text" id="loginUsername" placeholder="Username" required />
+                    <i class="fa-solid fa-user input-icon"></i>
+                    <input type="text" id="username" placeholder="Admin Username" required>
                 </div>
                 <div class="input-group">
-                    <i class="fas fa-lock"></i>
-                    <input type="password" id="loginPassword" placeholder="Password" required />
+                    <i class="fa-solid fa-lock input-icon"></i>
+                    <input type="password" id="password" placeholder="Admin Password" required>
                 </div>
-                <button type="submit" id="loginBtn">
-                    <i class="fas fa-sign-in-alt"></i> Login
+                <button type="submit" id="login-btn" class="btn btn-primary btn-block">
+                    <i class="fa-solid fa-right-to-bracket"></i> Login to Panel
                 </button>
-                <p id="loginError" class="error-text"></p>
             </form>
+            <p id="login-error" class="error-msg hidden">
+                <i class="fa-solid fa-circle-exclamation"></i> Invalid credentials!
+            </p>
         </div>
     </div>
 
-    <!-- ==================== DASHBOARD ==================== -->
-    <div id="appScreen" class="app-screen hidden">
-
-        <!-- TOP BAR -->
-        <header class="top-bar">
-            <div class="logo">
-                <i class="fas fa-cloud"></i>
-                <span>Kutub Cloud</span>
+    <!-- 🏛️ MAIN APP & ADMIN DASHBOARD -->
+    <div id="app-section" class="app-container hidden">
+        
+        <!-- Header -->
+        <header class="top-bar glass-card">
+            <div class="brand flex-center">
+                <i class="fa-solid fa-book-bookmark brand-icon"></i>
+                <span class="brand-title">KUTUB CLOUD</span>
             </div>
-            <div class="header-actions">
-                <span id="userDisplay" class="user-badge">
-                    <i class="fas fa-user-circle"></i> <span id="usernameDisplay">admin</span>
-                </span>
-                <button id="logoutBtn" class="logout-btn">
-                    <i class="fas fa-sign-out-alt"></i>
+            
+            <div class="search-box">
+                <i class="fa-solid fa-magnifying-glass search-icon"></i>
+                <input type="text" id="search-input" placeholder="Search books, PDFs, folders...">
+            </div>
+
+            <div class="user-controls flex-center">
+                <button id="upload-btn" class="btn btn-success">
+                    <i class="fa-solid fa-cloud-arrow-up"></i> Upload PDF
+                </button>
+                <input type="file" id="file-input" accept="application/pdf" style="display: none;">
+                
+                <button id="create-folder-btn" class="btn btn-secondary">
+                    <i class="fa-solid fa-folder-plus"></i> New Folder
+                </button>
+                
+                <button id="logout-btn" class="btn btn-danger btn-icon-only" title="Logout">
+                    <i class="fa-solid fa-power-off"></i>
                 </button>
             </div>
         </header>
 
-        <!-- ========== STATS DASHBOARD (NEW) ========== -->
-        <section class="stats-bar">
-            <div class="stat-card">
-                <div class="stat-icon blue"><i class="fas fa-book"></i></div>
+        <!-- 📊 ADMIN STATS PANEL -->
+        <section class="stats-grid">
+            <div class="stat-card glass-card">
+                <div class="stat-icon icon-teal"><i class="fa-solid fa-folder"></i></div>
                 <div class="stat-info">
-                    <span class="stat-number" id="statBooks">0</span>
-                    <span class="stat-label">Total Books</span>
+                    <h3 id="stat-folders">0</h3>
+                    <p>Total Folders</p>
                 </div>
             </div>
-            <div class="stat-card">
-                <div class="stat-icon green"><i class="fas fa-folder"></i></div>
+            <div class="stat-card glass-card">
+                <div class="stat-icon icon-blue"><i class="fa-solid fa-file-pdf"></i></div>
                 <div class="stat-info">
-                    <span class="stat-number" id="statFolders">0</span>
-                    <span class="stat-label">Folders</span>
+                    <h3 id="stat-files">0</h3>
+                    <p>Total PDFs</p>
                 </div>
             </div>
-            <div class="stat-card">
-                <div class="stat-icon purple"><i class="fas fa-database"></i></div>
+            <div class="stat-card glass-card">
+                <div class="stat-icon icon-purple"><i class="fa-solid fa-hard-drive"></i></div>
                 <div class="stat-info">
-                    <span class="stat-number" id="statStorage">0 MB</span>
-                    <span class="stat-label">Storage Used</span>
+                    <h3 id="stat-storage">0 MB</h3>
+                    <p>Cloud Storage</p>
                 </div>
             </div>
-            <div class="stat-card">
-                <div class="stat-icon orange"><i class="fas fa-users"></i></div>
+            <div class="stat-card glass-card">
+                <div class="stat-icon icon-green"><i class="fa-solid fa-shield-halved"></i></div>
                 <div class="stat-info">
-                    <span class="stat-number" id="statSessions">1</span>
-                    <span class="stat-label">Active Sessions</span>
+                    <h3 id="stat-status">Active</h3>
+                    <p>Admin Status</p>
                 </div>
             </div>
         </section>
 
-        <!-- TOOLBAR -->
-        <div class="toolbar">
-            <div class="search-wrapper">
-                <i class="fas fa-search"></i>
-                <input type="text" id="searchInput" placeholder="Search books..." />
+        <!-- Main Content Area -->
+        <main class="main-content glass-card">
+            <!-- Breadcrumb Navigation -->
+            <nav class="breadcrumb-container" id="breadcrumb">
+                <span class="crumb active"><i class="fa-solid fa-house"></i> Root Library</span>
+            </nav>
+
+            <!-- Dynamic Folder & File Grid -->
+            <div id="content-grid" class="content-grid">
+                <!-- Javascript builds cards here -->
             </div>
-            <button id="newFolderBtn" class="btn btn-outline">
-                <i class="fas fa-folder-plus"></i> New Folder
-            </button>
-            <button id="uploadBtn" class="btn btn-primary">
-                <i class="fas fa-upload"></i> Upload PDF
-            </button>
-        </div>
-
-        <!-- FOLDER / FILE GRID -->
-        <div id="contentGrid" class="content-grid">
-            <!-- JS dynamically renders items here -->
-        </div>
+        </main>
     </div>
 
-    <!-- ========== MODALS ========== -->
-    <!-- New Folder Modal -->
-    <div id="folderModal" class="modal hidden">
-        <div class="modal-content">
-            <span class="modal-close">&times;</span>
-            <h3><i class="fas fa-folder-plus"></i> New Folder</h3>
-            <input type="text" id="folderNameInput" placeholder="Folder name..." />
-            <button id="createFolderBtn" class="btn btn-primary">Create</button>
-        </div>
-    </div>
-
-    <!-- PDF Viewer Modal -->
-    <div id="pdfModal" class="modal hidden">
-        <div class="modal-content modal-pdf">
-            <span class="modal-close">&times;</span>
-            <iframe id="pdfFrame" src=""></iframe>
-        </div>
-    </div>
-
-    <!-- Rename Modal -->
-    <div id="renameModal" class="modal hidden">
-        <div class="modal-content">
-            <span class="modal-close">&times;</span>
-            <h3><i class="fas fa-pen"></i> Rename</h3>
-            <input type="text" id="renameInput" placeholder="New name..." />
-            <button id="renameConfirmBtn" class="btn btn-primary">Save</button>
+    <!-- 📄 PDF VIEWER MODAL -->
+    <div id="pdf-modal" class="modal hidden">
+        <div class="modal-content pdf-modal-content glass-card">
+            <div class="modal-header">
+                <h3 id="pdf-title"><i class="fa-solid fa-file-pdf"></i> Document Viewer</h3>
+                <div class="modal-actions">
+                    <a id="pdf-download-link" href="#" target="_blank" class="btn btn-sm btn-success">
+                        <i class="fa-solid fa-download"></i> Download
+                    </a>
+                    <button id="close-pdf-btn" class="btn btn-sm btn-danger">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="modal-body">
+                <iframe id="pdf-frame" src="about:blank" frameborder="0"></iframe>
+            </div>
         </div>
     </div>
 
