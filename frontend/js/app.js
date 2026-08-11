@@ -27,9 +27,9 @@ function initApp() {
     // Search Filter
     document.getElementById('search-input').addEventListener('input', (e) => {
         const query = e.target.value.toLowerCase();
-        document.querySelectorAll('.grid-item').forEach(item => {
-            const title = item.querySelector('.item-title').textContent.toLowerCase();
-            item.style.display = title.includes(query) ? 'block' : 'none';
+        document.querySelectorAll('.explorer-item').forEach(item => {
+            const title = item.querySelector('.item-name').textContent.toLowerCase();
+            item.style.display = title.includes(query) ? 'flex' : 'none';
         });
     });
 }
@@ -51,10 +51,21 @@ async function loadStats() {
     }
 }
 
+function formatDate(dateStr) {
+    if (!dateStr) return '26-08-12 00:00';
+    const d = new Date(dateStr);
+    const yy = String(d.getFullYear()).slice(-2);
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+    const hh = String(d.getHours()).padStart(2, '0');
+    const min = String(d.getMinutes()).padStart(2, '0');
+    return `${yy}-${mm}-${dd} ${hh}:${min}`;
+}
+
 async function loadContent(folderId = null) {
     currentFolderId = folderId;
     const grid = document.getElementById('content-grid');
-    grid.innerHTML = '<p><i class="fa-solid fa-spinner fa-spin"></i> Loading content...</p>';
+    grid.innerHTML = '<p style="padding:15px; color:#ccc;"><i class="fa-solid fa-spinner fa-spin"></i> Loading content...</p>';
 
     try {
         const url = folderId ? `/api/folders/${folderId}` : '/api/folders/root';
@@ -62,29 +73,45 @@ async function loadContent(folderId = null) {
             headers: { 'Authorization': `Bearer ${Auth.getToken()}` }
         });
 
-        if (!res.ok) {
-            throw new Error(`Server returned ${res.status}`);
-        }
+        if (!res.ok) throw new Error(`Server status ${res.status}`);
 
         const data = await res.json();
-
         grid.innerHTML = '';
 
         if ((!data.folders || data.folders.length === 0) && (!data.files || data.files.length === 0)) {
-            grid.innerHTML = '<p style="color:#aaa; text-align:center; padding: 20px;">No folders or files found. Upload a PDF or create a folder!</p>';
+            grid.innerHTML = '<p style="color:#888; padding:20px; text-align:center;">Empty Folder</p>';
             return;
         }
 
-        // Render Folders
+        // Parent / Go Back Row (agar inside folder ho)
+        if (folderId !== null) {
+            const backItem = document.createElement('div');
+            backItem.className = 'explorer-item';
+            backItem.style.cssText = 'display:flex; align-items:center; gap:12px; padding:10px; border-bottom:1px solid #333; cursor:pointer;';
+            backItem.innerHTML = `
+                <i class="fa-solid fa-folder" style="color:#e0e0e0; font-size:20px;"></i>
+                <div><div class="item-name" style="font-weight:bold; color:#fff;">..</div></div>
+            `;
+            backItem.addEventListener('click', () => loadContent(null));
+            grid.appendChild(backItem);
+        }
+
+        // Render Folders (File Explorer List View Layout)
         if (data.folders) {
             data.folders.forEach(f => {
                 const item = document.createElement('div');
-                item.className = 'grid-item';
+                item.className = 'explorer-item';
+                item.style.cssText = 'display:flex; align-items:center; justify-content:space-between; padding:10px; border-bottom:1px solid #2a2a2a; cursor:pointer;';
                 item.innerHTML = `
-                    <i class="fa-solid fa-folder main-icon folder-icon"></i>
-                    <div class="item-title">${f.name}</div>
-                    <div class="item-actions">
-                        <button onclick="deleteFolder(${f.id}, event)" class="action-btn" title="Delete"><i class="fa-solid fa-trash"></i></button>
+                    <div style="display:flex; align-items:center; gap:12px;">
+                        <i class="fa-solid fa-folder" style="color:#cfcfcf; font-size:22px;"></i>
+                        <div>
+                            <div class="item-name" style="color:#e0e0e0; font-size:15px; font-weight:600;">${f.name}</div>
+                            <div style="color:#777; font-size:11px; margin-top:2px;">${formatDate(f.created_at)}</div>
+                        </div>
+                    </div>
+                    <div>
+                        <button onclick="deleteFolder(${f.id}, event)" style="background:none; border:none; color:#888; cursor:pointer;" title="Delete"><i class="fa-solid fa-trash"></i></button>
                     </div>
                 `;
                 item.addEventListener('click', () => loadContent(f.id));
@@ -92,17 +119,23 @@ async function loadContent(folderId = null) {
             });
         }
 
-        // Render Files
+        // Render Files (File Explorer List View Layout)
         if (data.files) {
             data.files.forEach(file => {
                 const item = document.createElement('div');
-                item.className = 'grid-item';
+                item.className = 'explorer-item';
+                item.style.cssText = 'display:flex; align-items:center; justify-content:space-between; padding:10px; border-bottom:1px solid #2a2a2a;';
                 item.innerHTML = `
-                    <i class="fa-solid fa-file-pdf main-icon pdf-icon"></i>
-                    <div class="item-title">${file.name}</div>
-                    <div class="item-actions">
-                        <button onclick="openPdf('${file.url}', '${file.name}', event)" class="action-btn" title="Open"><i class="fa-solid fa-eye"></i></button>
-                        <button onclick="deleteFile(${file.id}, event)" class="action-btn" title="Delete"><i class="fa-solid fa-trash"></i></button>
+                    <div style="display:flex; align-items:center; gap:12px;">
+                        <i class="fa-solid fa-file-pdf" style="color:#e74c3c; font-size:22px;"></i>
+                        <div>
+                            <div class="item-name" style="color:#e0e0e0; font-size:15px; font-weight:600;">${file.name}</div>
+                            <div style="color:#777; font-size:11px; margin-top:2px;">${formatDate(file.created_at)}</div>
+                        </div>
+                    </div>
+                    <div style="display:flex; gap:10px;">
+                        <button onclick="openPdf('${file.cloudinary_url}', '${file.name}', event)" style="background:none; border:none; color:#3498db; cursor:pointer;" title="Open"><i class="fa-solid fa-eye"></i></button>
+                        <button onclick="deleteFile(${file.id}, event)" style="background:none; border:none; color:#888; cursor:pointer;" title="Delete"><i class="fa-solid fa-trash"></i></button>
                     </div>
                 `;
                 grid.appendChild(item);
@@ -110,8 +143,8 @@ async function loadContent(folderId = null) {
         }
 
     } catch (err) {
-        console.error("Load Content Error:", err);
-        grid.innerHTML = '<p class="error-msg">Failed to load content.</p>';
+        console.error("Load Error:", err);
+        grid.innerHTML = '<p class="error-msg" style="padding:15px; color:#e74c3c;">Failed to load content.</p>';
     }
 }
 
@@ -133,7 +166,7 @@ async function handleFileUpload(e) {
             loadContent(currentFolderId);
             loadStats();
         } else {
-            alert('Upload failed!');
+            alert('Upload failed! Check Cloudinary keys in environment variables.');
         }
     } catch (err) {
         alert('Upload error!');
@@ -164,7 +197,7 @@ function openPdf(url, title, e) {
     if (e) e.stopPropagation();
     document.getElementById('pdf-title').textContent = title;
     
-    const embedUrl = url.replace('/upload/', '/upload/fl_inline/');
+    const embedUrl = url ? url.replace('/upload/', '/upload/fl_inline/') : '#';
     
     document.getElementById('pdf-frame').src = embedUrl;
     document.getElementById('pdf-download-link').href = url;
@@ -177,7 +210,7 @@ function closePdfModal() {
 }
 
 async function deleteFile(id, e) {
-    e.stopPropagation();
+    if (e) e.stopPropagation();
     if (!confirm('Are you sure you want to delete this PDF?')) return;
     await fetch(`/api/files/${id}`, {
         method: 'DELETE',
@@ -188,7 +221,7 @@ async function deleteFile(id, e) {
 }
 
 async function deleteFolder(id, e) {
-    e.stopPropagation();
+    if (e) e.stopPropagation();
     if (!confirm('Delete this folder and contents?')) return;
     await fetch(`/api/folders/${id}`, {
         method: 'DELETE',
