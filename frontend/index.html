@@ -12,30 +12,26 @@
 </head>
 <body>
 
-    <!-- 🔒 LOGIN SECTION -->
+    <!-- 🔑 LICENSE KEY LOGIN SECTION -->
     <div id="login-section" class="login-container">
         <div class="glass-card login-card">
             <div class="brand-badge">
-                <i class="fa-solid fa-vault"></i>
+                <i class="fa-solid fa-key"></i>
             </div>
-            <h2>Kutub Cloud Admin</h2>
-            <p class="subtitle">Enter your admin credentials to manage library</p>
+            <h2>Kutub Cloud Access</h2>
+            <p class="subtitle">Enter your valid License Key to continue</p>
 
             <form id="login-form">
                 <div class="input-group">
-                    <i class="fa-solid fa-user input-icon"></i>
-                    <input type="text" id="username" placeholder="Admin Username" required>
-                </div>
-                <div class="input-group">
-                    <i class="fa-solid fa-lock input-icon"></i>
-                    <input type="password" id="password" placeholder="Admin Password" required>
+                    <i class="fa-solid fa-key input-icon"></i>
+                    <input type="text" id="license-key-input" placeholder="Enter License Key (e.g. KAL123...)" required>
                 </div>
                 <button type="submit" id="login-btn" class="btn btn-primary btn-block">
-                    <i class="fa-solid fa-right-to-bracket"></i> Login to Panel
+                    <i class="fa-solid fa-right-to-bracket"></i> Verify & Login
                 </button>
             </form>
             <p id="login-error" class="error-msg hidden">
-                <i class="fa-solid fa-circle-exclamation"></i> Invalid credentials!
+                <i class="fa-solid fa-circle-exclamation"></i> <span id="error-text">Invalid License Key!</span>
             </p>
         </div>
     </div>
@@ -98,7 +94,7 @@
                 <div class="stat-icon icon-green"><i class="fa-solid fa-shield-halved"></i></div>
                 <div class="stat-info">
                     <h3 id="stat-status">Active</h3>
-                    <p>Admin Status</p>
+                    <p>License Status</p>
                 </div>
             </div>
         </section>
@@ -136,6 +132,10 @@
             </div>
         </div>
     </div>
+
+    <!-- Firebase Realtime Database Libraries -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
 
     <script src="js/auth.js"></script>
     <script src="js/app.js"></script>
